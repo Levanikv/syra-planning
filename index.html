@@ -50,56 +50,57 @@
 
 /* ─── LIGHT MODE ─── */
 html.light-mode, .light-mode {
-  --bg: #F3F4F6;
+  --bg: #ECEEF2;
   --surface: #FFFFFF;
-  --surface-2: #F9FAFB;
-  --surface-3: #E5E7EB;
-  --border: #D1D5DB;
-  --border-light: #9CA3AF;
-  --text: #111827;
-  --text-muted: #6B7280;
-  --text-dim: #9CA3AF;
-  --accent: #D97706;
-  --accent-dim: rgba(217,119,6,0.1);
-  --accent-hover: #B45309;
-  --today: rgba(217,119,6,0.08);
-  --weekend: rgba(0,0,0,0.02);
-  --green: #059669;
-  --green-dim: rgba(5,150,105,0.1);
-  --blue: #2563EB;
-  --blue-dim: rgba(37,99,235,0.1);
-  --red: #DC2626;
-  --red-dim: rgba(220,38,38,0.1);
-  --purple: #7C3AED;
-  --purple-dim: rgba(124,58,237,0.1);
-  --pink: #DB2777;
-  --pink-dim: rgba(219,39,119,0.1);
-  --cyan: #0891B2;
-  --cyan-dim: rgba(8,145,178,0.1);
-  --orange: #EA580C;
-  --orange-dim: rgba(234,88,12,0.1);
+  --surface-2: #F3F4F7;
+  --surface-3: #DCDFE6;
+  --border: #B8BCC8;
+  --border-light: #7B8198;
+  --text: #0A0C12;
+  --text-muted: #3D4255;
+  --text-dim: #6B7086;
+  --accent: #9A3412;
+  --accent-dim: rgba(154,52,18,0.14);
+  --accent-hover: #7C2D12;
+  --today: rgba(154,52,18,0.1);
+  --weekend: rgba(0,0,0,0.04);
+  --green: #065F46;
+  --green-dim: rgba(6,95,70,0.15);
+  --blue: #1E40AF;
+  --blue-dim: rgba(30,64,175,0.13);
+  --red: #991B1B;
+  --red-dim: rgba(153,27,27,0.13);
+  --purple: #5B21B6;
+  --purple-dim: rgba(91,33,182,0.13);
+  --pink: #9D174D;
+  --pink-dim: rgba(157,23,77,0.13);
+  --cyan: #155E75;
+  --cyan-dim: rgba(21,94,117,0.13);
+  --orange: #9A3412;
+  --orange-dim: rgba(154,52,18,0.13);
 }
 
 .light-mode .logo-dark { display: none; }
 .light-mode .logo-light { display: block; }
 .logo-light { display: none; }
 
-.light-mode .worker-name.is-st { background: #EDE9FE; }
+.light-mode .worker-name.is-st { background: #E9E5FB; }
 .light-mode .worker-name.is-st:hover { background: #DDD6FE; }
-.light-mode .cell.is-st { background: #F5F3FF; }
-.light-mode .cell.is-st.weekend, .light-mode .cell.is-st.holiday { background: rgba(0,0,0,0.02); }
-.light-mode .cell.is-st.today { background: rgba(217,119,6,0.08); }
+.light-mode .cell.is-st { background: #F0EEFA; }
+.light-mode .cell.is-st.weekend, .light-mode .cell.is-st.holiday { background: rgba(0,0,0,0.03); }
+.light-mode .cell.is-st.today { background: rgba(154,52,18,0.1); }
 
-.light-mode .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-.light-mode .context-menu { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.light-mode .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.light-mode .context-menu { box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
 
 .light-mode .worker-name { background: var(--bg); }
 .light-mode .worker-name:hover { background: var(--surface-3); }
 .light-mode .grid-corner { background: var(--surface); }
 .light-mode .day-header { background: var(--surface); }
 .light-mode .week-header { background: var(--surface); }
-.light-mode .st-badge { background: rgba(124,58,237,0.1); color: #7C3AED; }
-.light-mode .toast { background: #111827; color: #F9FAFB; border-color: #374151; }
+.light-mode .st-badge { background: rgba(91,33,182,0.12); color: #5B21B6; }
+.light-mode .toast { background: #0A0C12; color: #F9FAFB; border-color: #374151; }
+.light-mode .cell { border-right-color: rgba(0,0,0,0.04); }
 
 /* ─── THEME TOGGLE ─── */
 .theme-toggle {
@@ -812,6 +813,15 @@ header {
 .tv-mode .tv-nav { display: flex; }
 .tv-mode .header-top { display: flex; }
 
+/* ─── BINOCLAR MODE ─── */
+.binoclar-mode .grid-wrapper {
+  zoom: 1.25;
+}
+
+.binoclar-mode .legend {
+  zoom: 1.2;
+}
+
 /* ─── LEGEND ─── */
 .legend {
   display: flex;
@@ -888,6 +898,9 @@ header {
           <button class="theme-btn active" id="themeDark" onclick="setTheme('dark')" title="Mode sombre">☾</button>
           <button class="theme-btn" id="themeLight" onclick="setTheme('light')" title="Mode clair">☀</button>
         </div>
+        <button class="btn btn-icon" id="binoclarBtn" onclick="toggleBinoclar()" title="Mode binoclar — zoom">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 16 16"><circle cx="6" cy="7" r="3.5"/><path d="M9 9.5l3.5 3.5"/></svg>
+        </button>
         <button class="btn" onclick="openTeamPanel()">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1 13v-1a3 3 0 013-3h2a3 3 0 013 3v1"/><path d="M10 6h4M12 4v4"/></svg>
           Équipe
@@ -1185,6 +1198,7 @@ const auth = firebase.auth();
 const planningRef = db.ref('planning');
 const pinRef = db.ref('config/pin');
 const themeRef = db.ref('config/theme');
+const binoclarRef = db.ref('config/binoclar');
 
 // ─── AUTH & PIN ───
 let isAuthenticated = false;
@@ -2245,6 +2259,31 @@ themeRef.on('value', (snap) => {
   const theme = snap.val();
   if (theme && theme !== currentTheme) {
     applyTheme(theme);
+  }
+});
+
+// ─── BINOCLAR ───
+let binoclarOn = false;
+
+function applyBinoclar(on) {
+  binoclarOn = on;
+  const app = document.getElementById('app');
+  const html = document.documentElement;
+  app.classList.toggle('binoclar-mode', on);
+  html.classList.toggle('binoclar-mode', on);
+  document.getElementById('binoclarBtn').classList.toggle('btn-primary', on);
+}
+
+function toggleBinoclar() {
+  applyBinoclar(!binoclarOn);
+  binoclarRef.set(binoclarOn).catch(e => console.warn('Binoclar save error:', e));
+}
+
+// Listen for binoclar changes from other clients
+binoclarRef.on('value', (snap) => {
+  const on = snap.val();
+  if (on !== null && on !== binoclarOn) {
+    applyBinoclar(on);
   }
 });
 
