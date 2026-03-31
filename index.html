@@ -676,14 +676,29 @@ header {
 .toast.visible { transform: translateX(-50%) translateY(0); }
 
 /* ─── TV MODE ─── */
-.tv-mode .header-top { display: none; }
-.tv-mode .header-nav { padding: 10px 24px; }
-.tv-mode .header-filters { display: none; }
-.tv-mode .header-nav .btn:not(.btn-icon) { display: none; }
+.tv-mode .header-top { padding: 10px 24px; }
+.tv-mode .header-top .header-actions { display: none; }
+.tv-mode .header-top .logo-svg { height: 24px; }
+.tv-mode .header-nav { display: none; }
 .tv-mode .cell { cursor: default; }
 .tv-mode .worker-name { cursor: default; pointer-events: none; }
-.tv-mode .nav-group h1 { font-size: 18px; }
-.tv-mode .date-range { display: none; }
+
+/* In TV mode, show nav inside header-top on the right */
+.tv-nav {
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.tv-nav h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-muted);
+}
+
+.tv-mode .tv-nav { display: flex; }
+.tv-mode .header-top { display: flex; }
 
 /* ─── LEGEND ─── */
 .legend {
@@ -767,6 +782,15 @@ header {
         <button class="btn btn-primary" onclick="toggleTvMode()" id="tvBtn">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="12" height="8" rx="1"/><path d="M4 14h6"/></svg>
           Mode TV
+        </button>
+      </div>
+      <div class="tv-nav">
+        <h1>Planning Chantier</h1>
+        <button class="btn btn-icon" onclick="navigate(-1)" title="←">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2L4 7l5 5"/></svg>
+        </button>
+        <button class="btn btn-icon" onclick="navigate(1)" title="→">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 2l5 5-5 5"/></svg>
         </button>
       </div>
     </div>
