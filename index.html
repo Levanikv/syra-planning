@@ -676,9 +676,14 @@ header {
 .toast.visible { transform: translateX(-50%) translateY(0); }
 
 /* ─── TV MODE ─── */
-.tv-mode header { padding: 12px 24px; }
-.tv-mode .header-actions .btn:not(.btn-tv-exit) { display: none; }
+.tv-mode .header-top { display: none; }
+.tv-mode .header-nav { padding: 10px 24px; }
+.tv-mode .header-filters { display: none; }
+.tv-mode .header-nav .btn:not(.btn-icon) { display: none; }
 .tv-mode .cell { cursor: default; }
+.tv-mode .worker-name { cursor: default; pointer-events: none; }
+.tv-mode .nav-group h1 { font-size: 18px; }
+.tv-mode .date-range { display: none; }
 
 /* ─── LEGEND ─── */
 .legend {
@@ -1357,7 +1362,7 @@ let assignScope = 'personal'; // 'personal' | 'crew'
 function buildWeekOptions(selectedDate) {
   const today = new Date();
   const start = getMonday(addDays(today, -7 * 4));
-  const end = addDays(today, 7 * (displayWeeks + 4));
+  const end = addDays(today, 7 * 30); // ~30 weeks ahead
   const sel = document.getElementById('assignWeekSelect');
   sel.innerHTML = '';
 
