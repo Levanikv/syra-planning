@@ -2271,12 +2271,50 @@ function confirmAddChantier() {
 // ─── THEME ───
 let currentTheme = 'dark';
 
+// Helper: find the first visible day column's date key
+function getFirstVisibleDay() {
+  const wrapper = document.getElementById('gridWrapper');
+  if (!wrapper) return null;
+  const nameCol = wrapper.querySelector('.grid-corner');
+  const nameRight = nameCol ? nameCol.getBoundingClientRect().right : 0;
+  const headers = wrapper.querySelectorAll('.day-header');
+  for (const h of headers) {
+    const rect = h.getBoundingClientRect();
+    if (rect.right > nameRight + 5) {
+      // Find the matching cell to get the date
+      const col = Array.from(headers).indexOf(h);
+      const cells = wrapper.querySelectorAll('.cell');
+      for (const c of cells) {
+        if (c.dataset.date) {
+          const cellCol = parseInt(c.style.gridColumn) - 2;
+          if (cellCol === col) return c.dataset.date;
+        }
+      }
+      break;
+    }
+  }
+  return null;
+}
+
+// Helper: scroll to a specific date as first visible column
+function scrollToDate(dk) {
+  if (!dk) return;
+  const wrapper = document.getElementById('gridWrapper');
+  if (!wrapper) return;
+  const cell = wrapper.querySelector(`.cell[data-date="${dk}"]`);
+  if (!cell) return;
+  const header = wrapper.querySelectorAll('.day-header')[parseInt(cell.style.gridColumn) - 2];
+  if (!header) return;
+  const nameCol = wrapper.querySelector('.grid-corner');
+  const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
+  wrapper.scrollLeft = header.offsetLeft - nameWidth;
+}
+
 function applyTheme(theme) {
   currentTheme = theme;
   const app = document.getElementById('app');
   const html = document.documentElement;
-  const wrapper = document.getElementById('gridWrapper');
-  const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+  const visibleDay = getFirstVisibleDay();
   
   app.classList.remove('light-mode');
   html.classList.remove('light-mode');
@@ -2289,10 +2327,7 @@ function applyTheme(theme) {
   document.getElementById('themeDark').classList.toggle('active', theme === 'dark');
   document.getElementById('themeLight').classList.toggle('active', theme === 'light');
   
-  // Restore scroll position after style reflow
-  if (wrapper) {
-    requestAnimationFrame(() => { wrapper.scrollLeft = scrollLeft; });
-  }
+  requestAnimationFrame(() => scrollToDate(visibleDay));
 }
 
 function setTheme(theme) {
@@ -2316,16 +2351,13 @@ function applyBinoclar(on) {
   binoclarOn = on;
   const app = document.getElementById('app');
   const html = document.documentElement;
-  const wrapper = document.getElementById('gridWrapper');
-  const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+  const visibleDay = getFirstVisibleDay();
   
   app.classList.toggle('binoclar-mode', on);
   html.classList.toggle('binoclar-mode', on);
   document.getElementById('binoclarBtn').classList.toggle('btn-primary', on);
   
-  if (wrapper) {
-    requestAnimationFrame(() => { wrapper.scrollLeft = scrollLeft; });
-  }
+  requestAnimationFrame(() => scrollToDate(visibleDay));
 }
 
 function toggleBinoclar() {
