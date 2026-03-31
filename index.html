@@ -2273,6 +2273,9 @@ function applyTheme(theme) {
   currentTheme = theme;
   const app = document.getElementById('app');
   const html = document.documentElement;
+  const wrapper = document.getElementById('gridWrapper');
+  const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+  
   app.classList.remove('light-mode');
   html.classList.remove('light-mode');
   
@@ -2283,6 +2286,11 @@ function applyTheme(theme) {
   
   document.getElementById('themeDark').classList.toggle('active', theme === 'dark');
   document.getElementById('themeLight').classList.toggle('active', theme === 'light');
+  
+  // Restore scroll position after style reflow
+  if (wrapper) {
+    requestAnimationFrame(() => { wrapper.scrollLeft = scrollLeft; });
+  }
 }
 
 function setTheme(theme) {
@@ -2306,9 +2314,16 @@ function applyBinoclar(on) {
   binoclarOn = on;
   const app = document.getElementById('app');
   const html = document.documentElement;
+  const wrapper = document.getElementById('gridWrapper');
+  const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+  
   app.classList.toggle('binoclar-mode', on);
   html.classList.toggle('binoclar-mode', on);
   document.getElementById('binoclarBtn').classList.toggle('btn-primary', on);
+  
+  if (wrapper) {
+    requestAnimationFrame(() => { wrapper.scrollLeft = scrollLeft; });
+  }
 }
 
 function toggleBinoclar() {
