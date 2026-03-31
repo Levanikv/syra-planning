@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Planning Chantier — Compagnons & Travaux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -50,57 +53,91 @@
 
 /* ─── LIGHT MODE ─── */
 html.light-mode, .light-mode {
-  --bg: #ECEEF2;
+  --bg: #F5F6F8;
   --surface: #FFFFFF;
-  --surface-2: #F3F4F7;
-  --surface-3: #DCDFE6;
-  --border: #B8BCC8;
-  --border-light: #7B8198;
-  --text: #0A0C12;
-  --text-muted: #3D4255;
-  --text-dim: #6B7086;
-  --accent: #9A3412;
-  --accent-dim: rgba(154,52,18,0.14);
-  --accent-hover: #7C2D12;
-  --today: rgba(154,52,18,0.1);
-  --weekend: rgba(0,0,0,0.04);
-  --green: #065F46;
-  --green-dim: rgba(6,95,70,0.15);
-  --blue: #1E40AF;
-  --blue-dim: rgba(30,64,175,0.13);
-  --red: #991B1B;
-  --red-dim: rgba(153,27,27,0.13);
-  --purple: #5B21B6;
-  --purple-dim: rgba(91,33,182,0.13);
-  --pink: #9D174D;
-  --pink-dim: rgba(157,23,77,0.13);
-  --cyan: #155E75;
-  --cyan-dim: rgba(21,94,117,0.13);
-  --orange: #9A3412;
-  --orange-dim: rgba(154,52,18,0.13);
+  --surface-2: #FAFBFC;
+  --surface-3: #EDEEF2;
+  --border: #E4E6EB;
+  --border-light: #C8CCD5;
+  --text: #111318;
+  --text-muted: #4A4F60;
+  --text-dim: #9298A8;
+  --accent: #D97706;
+  --accent-dim: rgba(217,119,6,0.1);
+  --accent-hover: #B45309;
+  --today: rgba(217,119,6,0.08);
+  --weekend: rgba(0,0,0,0.015);
+  --green: #059669;
+  --green-dim: rgba(5,150,105,0.12);
+  --blue: #2563EB;
+  --blue-dim: rgba(37,99,235,0.1);
+  --red: #DC2626;
+  --red-dim: rgba(220,38,38,0.1);
+  --purple: #7C3AED;
+  --purple-dim: rgba(124,58,237,0.1);
+  --pink: #DB2777;
+  --pink-dim: rgba(219,39,119,0.1);
+  --cyan: #0891B2;
+  --cyan-dim: rgba(8,145,178,0.1);
+  --orange: #EA580C;
+  --orange-dim: rgba(234,88,12,0.1);
+}
+
+.light-mode .btn-primary {
+  background: #D97706;
+  border-color: #D97706;
+  color: #FFFFFF;
+}
+
+.light-mode .btn-primary:hover {
+  background: #B45309;
+  border-color: #B45309;
+}
+
+.light-mode .filter-chip.active {
+  background: rgba(217,119,6,0.14);
+  border-color: #D97706;
+  color: #B45309;
+  font-weight: 600;
+}
+
+.light-mode .crew-tag {
+  font-weight: 700;
+}
+
+.light-mode .cell-content {
+  font-weight: 700;
+}
+
+.light-mode .st-badge {
+  background: rgba(124,58,237,0.14);
+  color: #7C3AED;
+  font-weight: 800;
 }
 
 .light-mode .logo-dark { display: none; }
 .light-mode .logo-light { display: block; }
 .logo-light { display: none; }
 
-.light-mode .worker-name.is-st { background: #E9E5FB; }
-.light-mode .worker-name.is-st:hover { background: #DDD6FE; }
-.light-mode .cell.is-st { background: #F0EEFA; }
-.light-mode .cell.is-st.weekend, .light-mode .cell.is-st.holiday { background: rgba(0,0,0,0.03); }
-.light-mode .cell.is-st.today { background: rgba(154,52,18,0.1); }
+.light-mode .worker-name.is-st { background: #F6F4FE; }
+.light-mode .worker-name.is-st:hover { background: #EDEBFC; }
+.light-mode .cell.is-st { background: #FAF9FE; }
+.light-mode .cell.is-st.weekend, .light-mode .cell.is-st.holiday { background: rgba(0,0,0,0.015); }
+.light-mode .cell.is-st.today { background: rgba(217,119,6,0.08); }
 
-.light-mode .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-.light-mode .context-menu { box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.light-mode .modal { box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+.light-mode .context-menu { box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
 
 .light-mode .worker-name { background: var(--bg); }
 .light-mode .worker-name:hover { background: var(--surface-3); }
-.light-mode .grid-corner { background: var(--surface); }
+.light-mode .grid-corner { background: var(--surface); color: var(--text-dim); }
 .light-mode .day-header { background: var(--surface); }
-.light-mode .week-header { background: var(--surface); }
-.light-mode .st-badge { background: rgba(91,33,182,0.12); color: #5B21B6; }
-.light-mode .toast { background: #0A0C12; color: #F9FAFB; border-color: #374151; }
-.light-mode .cell { border-right-color: rgba(0,0,0,0.04); }
+.light-mode .week-header { background: var(--surface); color: var(--accent); }
+.light-mode .week-month { color: var(--text-dim); }
+.light-mode .toast { background: #1F2028; color: #F9FAFB; border-color: #363A44; }
+.light-mode .cell { border-right-color: rgba(0,0,0,0.03); }
+.light-mode .btn { border-color: var(--border); }
+.light-mode .btn:hover { background: var(--surface-3); border-color: var(--border-light); }
 
 /* ─── THEME TOGGLE ─── */
 .theme-toggle {
@@ -2286,6 +2323,18 @@ binoclarRef.on('value', (snap) => {
     applyBinoclar(on);
   }
 });
+
+// Polling fallback for TVs that don't maintain WebSocket
+setInterval(() => {
+  themeRef.once('value').then(snap => {
+    const theme = snap.val();
+    if (theme && theme !== currentTheme) applyTheme(theme);
+  });
+  binoclarRef.once('value').then(snap => {
+    const on = snap.val();
+    if (on !== null && on !== binoclarOn) applyBinoclar(on);
+  });
+}, 30000);
 
 // ─── FILTERS ───
 function setTeam(t) {
