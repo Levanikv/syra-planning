@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planning Chantier — Compagnons & Travaux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0C0E12;
+  --surface: #14171D;
+  --surface-2: #1C2028;
+  --surface-3: #242830;
+  --border: #2A2E38;
+  --border-light: #363A44;
+  --text: #E8EAED;
+  --text-muted: #8B8F98;
+  --text-dim: #5C6070;
+  --accent: #F59E0B;
+  --accent-dim: rgba(245,158,11,0.12);
+  --accent-hover: #FBBF24;
+  --green: #34D399;
+  --green-dim: rgba(52,211,153,0.12);
+  --blue: #60A5FA;
+  --blue-dim: rgba(96,165,250,0.12);
+  --red: #F87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --purple: #A78BFA;
+  --purple-dim: rgba(167,139,250,0.12);
+  --pink: #F472B6;
+  --pink-dim: rgba(244,114,182,0.12);
+  --cyan: #22D3EE;
+  --cyan-dim: rgba(34,211,238,0.12);
+  --orange: #FB923C;
+  --orange-dim: rgba(251,146,60,0.12);
+  --today: rgba(245,158,11,0.06);
+  --weekend: rgba(255,255,255,0.02);
+  --radius: 8px;
+  --radius-sm: 5px;
+  --transition: 150ms ease;
+  --font: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html, body { 
+  height: 100%; 
+  font-family: var(--font); 
+  background: var(--bg); 
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ─── LAYOUT ─── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-group h1 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.02em;
+  margin-right: 4px;
+}
+
+.date-range {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 400;
+  padding: 0 4px;
+}
+
+.logo-svg {
+  height: 28px;
+  width: auto;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.header-filters {
+  display: flex; gap: 4px; margin-right: 6px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn:hover { border-color: var(--border-light); background: var(--surface-3); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+.btn-icon {
+  width: 34px; height: 34px; padding: 0;
+  display: grid; place-items: center;
+  border-radius: var(--radius);
+}
+
+.filter-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all var(--transition);
+  font-family: var(--font);
+}
+
+.filter-chip:hover { border-color: var(--border-light); color: var(--text); }
+.filter-chip.active { 
+  background: var(--accent-dim); 
+  border-color: var(--accent); 
+  color: var(--accent); 
+}
+
+.filter-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.filter-sep {
+  width: 1px; height: 20px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+/* ─── GRID ─── */
+.grid-wrapper {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.planning-grid {
+  display: grid;
+  min-width: max-content;
+  min-height: 100%;
+}
+
+/* Sous-traitant row tint */
+.worker-name.is-st { background: rgba(167,139,250,0.04); }
+.worker-name.is-st:hover { background: rgba(167,139,250,0.08); }
+.cell.is-st { background: rgba(167,139,250,0.03); }
+.cell.is-st.weekend, .cell.is-st.holiday { background: var(--weekend); }
+.cell.is-st.today { background: var(--today); }
+
+.worker-name .st-badge {
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--purple-dim);
+  color: var(--purple);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* ─── TV / Large screen scaling ─── */
+@media (min-width: 1400px) {
+  .cell-content { font-size: 12px; padding: 5px 10px; }
+  .day-header .day-num { font-size: 17px; }
+  .day-header .day-name { font-size: 11px; }
+  .worker-name .name { font-size: 15px; }
+  .worker-name .role { font-size: 11px; }
+  .crew-bar { width: 5px; }
+  .crew-tag { font-size: 10px; }
+  .week-header { font-size: 12px; }
+}
+
+@media (min-width: 1920px) {
+  .cell-content { font-size: 13px; padding: 6px 12px; }
+  .day-header .day-num { font-size: 18px; }
+  .worker-name .name { font-size: 16px; }
+  .crew-bar { width: 6px; }
+  .crew-tag { font-size: 11px; padding: 2px 8px; }
+  .week-header { font-size: 13px; padding: 8px 0 4px; }
+  .legend { padding: 10px 24px; }
+  .legend-item { font-size: 13px; }
+  .legend-dot { width: 12px; height: 12px; }
+}
+
+.grid-corner {
+  position: sticky;
+  left: 0; top: 0;
+  z-index: 30;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+  display: flex; align-items: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.week-header {
+  position: sticky; top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  padding: 6px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.week-month {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  margin-left: 2px;
+}
+
+.day-header {
+  position: sticky; top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  padding: 4px 2px 6px;
+  overflow: hidden;
+}
+
+.day-header .day-name {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.day-header .day-num {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2px;
+  font-family: var(--mono);
+}
+
+.day-header.today { background: var(--accent-dim); }
+.day-header.today .day-num { color: var(--accent); }
+
+/* Off-day headers (weekends + holidays) — minimal */
+.day-header.off { padding: 4px 0 6px; }
+.day-header.off .day-name { opacity: 0.35; font-size: 9px; }
+
+.day-header.holiday .day-name { color: var(--accent); opacity: 0.7; }
+.day-header .holiday-label {
+  font-size: 7px;
+  color: var(--accent);
+  opacity: 0.8;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.worker-name {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+
+.worker-name:hover { background: var(--surface); }
+
+.crew-bar {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin: 6px 0;
+}
+
+.worker-info { min-width: 0; flex: 1; }
+.worker-info .name { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.worker-info .role { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; }
+
+.crew-tag {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.cell {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid rgba(255,255,255,0.03);
+  padding: 4px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition);
+  position: relative;
+  min-height: 0;
+}
+
+.cell:hover { background: var(--surface-2); }
+.cell.weekend { background: var(--weekend); cursor: default; }
+.cell.weekend:hover { background: var(--weekend); }
+
+.cell.holiday { background: rgba(245,158,11,0.04); cursor: default; }
+.cell.holiday:hover { background: rgba(245,158,11,0.04); }
+.cell.today { background: var(--today); }
+
+.cell-content {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Chantier color coding */
+.chantier-0  { background: var(--blue-dim);   color: var(--blue);   }
+.chantier-1  { background: var(--green-dim);  color: var(--green);  }
+.chantier-2  { background: var(--purple-dim); color: var(--purple); }
+.chantier-3  { background: var(--orange-dim); color: var(--orange); }
+.chantier-4  { background: var(--pink-dim);   color: var(--pink);   }
+.chantier-5  { background: var(--cyan-dim);   color: var(--cyan);   }
+.chantier-6  { background: var(--red-dim);    color: var(--red);    }
+.chantier-7  { background: var(--accent-dim); color: var(--accent); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  place-items: center;
+  animation: fadeIn 150ms ease;
+}
+
+.modal-overlay.active { display: grid; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 420px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 200ms ease;
+}
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.modal-header h2 {
+  font-size: 16px; font-weight: 600;
+}
+
+.modal-close {
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  border: none; background: var(--surface-2);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid; place-items: center;
+  font-size: 18px;
+  transition: all var(--transition);
+}
+
+.modal-close:hover { background: var(--surface-3); color: var(--text); }
+
+.modal-body { padding: 20px 24px; }
+
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  transition: border-color var(--transition);
+  outline: none;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+}
+
+.form-group select option { background: var(--surface-2); }
+
+.modal-footer {
+  padding: 16px 24px 20px;
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+.modal-footer .btn { min-width: 100px; justify-content: center; }
+
+/* Assign modes */
+.assign-modes {
+  display: flex; gap: 6px;
+}
+
+.assign-mode {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.assign-mode:hover { border-color: var(--border-light); color: var(--text); }
+
+.assign-mode.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.assign-preview {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  min-height: 36px;
+  display: flex; align-items: center;
+}
+
+.assign-preview strong { color: var(--text); font-weight: 600; margin: 0 3px; }
+
+/* Team panel */
+.team-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  transition: background var(--transition);
+}
+
+.team-row:hover { background: var(--surface-2); }
+
+.team-row .team-info { flex: 1; min-width: 0; }
+
+.team-row .team-name {
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.team-row .team-role {
+  font-size: 11px; color: var(--text-muted); margin-top: 1px;
+}
+
+.team-row .team-stats {
+  font-size: 11px; color: var(--text-dim);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+.team-actions {
+  display: flex; gap: 4px;
+}
+
+.team-actions .btn-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: all var(--transition);
+}
+
+.team-actions .btn-icon:hover {
+  background: var(--surface-3);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.team-actions .btn-icon.danger:hover {
+  background: var(--red-dim);
+  border-color: rgba(248,113,113,0.3);
+  color: var(--red);
+}
+
+.team-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Delete confirmation inline */
+.confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--red-dim);
+  border-radius: var(--radius);
+  margin-top: 4px;
+}
+
+.confirm-delete span {
+  font-size: 12px;
+  color: var(--red);
+  flex: 1;
+}
+
+.confirm-delete .btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* Color picker */
+.color-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all var(--transition);
+}
+
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg); }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface-3);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 13px; font-weight: 500;
+  z-index: 200;
+  transition: transform 300ms ease;
+  pointer-events: none;
+}
+
+.toast.visible { transform: translateX(-50%) translateY(0); }
+
+/* ─── TV MODE ─── */
+.tv-mode header { padding: 12px 24px; }
+.tv-mode .header-actions .btn:not(.btn-tv-exit) { display: none; }
+.tv-mode .cell { cursor: default; }
+
+/* ─── LEGEND ─── */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-muted);
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+
+/* ─── CONTEXT MENU ─── */
+.context-menu {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 4px;
+  z-index: 50;
+  min-width: 160px;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: fadeIn 100ms ease;
+}
+
+.context-menu.active { display: block; }
+
+.context-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  transition: background var(--transition);
+  border: none; background: none; width: 100%;
+  font-family: var(--font);
+  text-align: left;
+}
+
+.context-item:hover { background: var(--surface-3); }
+.context-item.danger { color: var(--red); }
+.context-item.danger:hover { background: var(--red-dim); }
+
+/* ─── SCROLLBAR ─── */
+.grid-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
+.grid-wrapper::-webkit-scrollbar-track { background: var(--bg); }
+.grid-wrapper::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+.grid-wrapper::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ─── RESPONSIVE ─── */
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-top">
+      <svg class="logo-svg" viewBox="0 0 193 33" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_2403_478)"><path d="M31.6776 0.0263977H25.2761L17.7175 6.34873L17.5107 6.30473L17.9507 0.0263977H10.7792L15.7068 12.2707L15.5968 12.4555L2.39782 7.09227L6.7051 0.0263977H0V31.704H31.6776V25.2101L21.5584 29.425L25.8261 12.4071L26.0329 12.3279L31.6864 21.4176V11.2632L23.9826 6.42352V6.21234L31.704 4.29848L31.6776 0.0263977ZM11.6723 27.0712L3.21176 17.2115L20.7181 16.0104L20.8588 16.1776L11.6723 27.0712Z" fill="white"/><path d="M41.2558 28.3031V29.0158H43.7373C43.7588 29.3229 43.7056 29.6305 43.5822 29.9125C43.4588 30.1944 43.269 30.4423 43.0289 30.6349C42.5097 30.9823 41.8932 31.1549 41.269 31.1277C40.3539 31.1277 39.691 30.8916 39.2804 30.4193C38.8619 29.8986 38.6476 29.2432 38.6776 28.5759C38.6498 28.2144 38.7012 27.8511 38.8281 27.5115C38.9549 27.1718 39.1544 26.8639 39.4124 26.6092C39.9101 26.1623 40.5609 25.9243 41.2295 25.9449C41.7506 25.9284 42.268 26.0371 42.7385 26.2616C42.9334 26.3656 43.1043 26.5095 43.2399 26.6838C43.3756 26.8582 43.4731 27.0591 43.5261 27.2736H44.5908C44.5208 26.8865 44.3532 26.5237 44.1037 26.2195C43.8542 25.9154 43.5312 25.68 43.1653 25.5357C42.5586 25.2928 41.9092 25.1746 41.2558 25.1881C40.3038 25.1433 39.3697 25.4573 38.638 26.068C38.2846 26.3857 38.0058 26.7777 37.8217 27.2159C37.6377 27.654 37.5528 28.1275 37.5733 28.6023C37.5484 29.0775 37.6339 29.5521 37.8232 29.9887C38.0126 30.4254 38.3005 30.8122 38.6644 31.1189C39.3582 31.6163 40.1957 31.8728 41.0491 31.8492C41.6514 31.8686 42.2511 31.7606 42.8089 31.5324C43.156 31.3601 43.475 31.1361 43.7549 30.8681L44.0188 31.6776H44.7448V28.2855L41.2558 28.3031Z" fill="white"/><path d="M47.6528 30.9429V28.7959H52.0041V28.0435H47.6528V26.1121H52.3605V25.3333H46.6013V31.6952H52.4441V30.9429H47.6528ZM49.5535 23.6042L48.5636 24.8538H49.3115L50.7546 23.6042H49.5535Z" fill="white"/><path d="M59.1008 25.3509V30.4765L55.1411 25.3509H53.874V31.6952H54.8991V26.574L58.916 31.6952H60.1436V25.3509H59.1008Z" fill="white"/><path d="M62.1057 25.3509V31.6952H63.1968V25.3509H62.1057Z" fill="white"/><path d="M66.0918 30.9429V28.7959H70.4475V28.0435H66.0918V26.1121H70.7995V25.3333H65.0403V31.6952H70.8786V30.9429H66.0918Z" fill="white"/><path d="M80.9408 29.3634C80.863 29.7347 80.697 30.0818 80.4568 30.3753C80.2388 30.6235 79.9669 30.8184 79.6618 30.945C79.3567 31.0716 79.0266 31.1266 78.697 31.1057C78.348 31.1311 77.9976 31.0828 77.6686 30.9638C77.3396 30.8448 77.0394 30.6577 76.7875 30.4149C76.3484 29.916 76.1197 29.2663 76.1495 28.6023C76.1201 28.2349 76.1679 27.8654 76.2899 27.5175C76.4119 27.1697 76.6054 26.8513 76.8579 26.5828C77.3653 26.1258 78.0324 25.8871 78.7145 25.9185C79.228 25.8891 79.7385 26.0148 80.1796 26.2792C80.5218 26.5119 80.7711 26.8578 80.8836 27.256H81.9263C81.8825 26.9644 81.7786 26.6852 81.621 26.436C81.4635 26.1868 81.2558 25.9731 81.0112 25.8085C80.2362 25.3443 79.3377 25.1284 78.4364 25.1897C77.5351 25.2511 76.6741 25.5867 75.9692 26.1516C75.6635 26.4507 75.4236 26.8102 75.2645 27.2071C75.1054 27.604 75.0307 28.0297 75.0452 28.4571C75.0452 29.6934 75.4544 30.6041 76.2727 31.1981C76.9473 31.6599 77.7524 31.8928 78.5694 31.8624C79.4787 31.9114 80.3738 31.6214 81.0816 31.0485C81.5903 30.6228 81.9202 30.0212 82.0055 29.3634H80.9408Z" fill="white"/><path d="M84.4561 30.9429V25.3509H83.3782V31.6952H88.4378V30.9429H84.4561Z" fill="white"/><path d="M89.771 25.3509V31.6952H90.8621V25.3509H89.771Z" fill="white"/><path d="M98.6582 25.3509L96.3968 30.7185L94.1178 25.3509H92.5779V31.6952H93.603V27.9555C93.603 27.8015 93.603 27.5683 93.581 27.2516C93.559 26.9348 93.581 26.6972 93.581 26.5432V26.3452L95.8688 31.6952H96.9336L99.195 26.3452C99.195 26.6928 99.195 27.0096 99.195 27.3132C99.195 27.6167 99.195 27.8279 99.195 27.9555V31.6952H100.181V25.3509H98.6582Z" fill="white"/><path d="M105.341 25.3509H104.14L101.153 31.6952H102.257L103.115 29.799H106.256L107.057 31.6952H108.236L105.341 25.3509ZM103.405 29.0994L104.686 26.2924L105.9 29.0994H103.405Z" fill="white"/><path d="M107.717 25.3509V26.112H110.392V31.6952H111.475V26.112H114.145V25.3509H107.717Z" fill="white"/><path d="M115.377 25.3509V31.6952H116.459V25.3509H115.377Z" fill="white"/><path d="M125.342 29.5966C125.473 29.2158 125.537 28.8155 125.531 28.4131C125.563 27.6201 125.28 26.8467 124.744 26.2616C124.071 25.5357 123.032 25.1837 121.633 25.1837C120.234 25.1837 119.28 25.5709 118.598 26.3584C118.06 27.0031 117.776 27.8217 117.799 28.6607C117.821 29.4998 118.149 30.3018 118.721 30.9165C119.525 31.6001 120.562 31.9468 121.616 31.8844C121.994 31.8863 122.372 31.848 122.742 31.77C123.07 31.6978 123.39 31.5932 123.697 31.4577L124.929 32.2056L125.465 31.6864L124.379 31.0001C124.832 30.6383 125.168 30.1497 125.342 29.5966ZM123.582 30.5117L122.544 29.865L122.003 30.3929L122.883 30.9385C122.722 31.016 122.55 31.0651 122.373 31.0837C122.162 31.1114 121.951 31.1246 121.739 31.1233C120.972 31.1804 120.212 30.9358 119.623 30.4413C119.38 30.2067 119.189 29.9227 119.065 29.6086C118.941 29.2945 118.885 28.9574 118.901 28.6199C118.871 28.2491 118.922 27.8761 119.051 27.5272C119.18 27.1783 119.385 26.862 119.649 26.6004C120.224 26.1386 120.95 25.9052 121.686 25.9449C122.415 25.9027 123.132 26.1475 123.684 26.6268C123.929 26.8576 124.122 27.1385 124.25 27.4505C124.378 27.7625 124.436 28.0983 124.423 28.4351C124.416 28.7974 124.354 29.1565 124.238 29.4998C124.116 29.8895 123.891 30.2391 123.587 30.5117H123.582Z" fill="white"/><path d="M132.069 25.3509V29.2798C132.091 29.6602 131.999 30.0385 131.805 30.3665C131.475 30.8637 130.851 31.1189 129.936 31.1189C129.628 31.1489 129.317 31.1015 129.032 30.9808C128.747 30.8602 128.496 30.6702 128.303 30.4281C128.075 30.0897 127.96 29.6878 127.973 29.2798V25.3509H126.891V28.9234C126.853 29.5484 126.99 30.1717 127.287 30.7229C127.762 31.4884 128.677 31.8712 130.019 31.8712C131.361 31.8712 132.276 31.4884 132.76 30.7229C133.063 30.1732 133.208 29.5504 133.178 28.9234V25.3553L132.069 25.3509Z" fill="white"/><path d="M135.954 30.9429V28.7959H140.306V28.0435H135.954V26.1121H140.658V25.3333H134.903V31.6952H140.741V30.9429H135.954Z" fill="white"/><path d="M37.5071 16.116H37.4939V20.9072H37.5071V16.116Z" fill="white"/><path d="M37.6392 16.1116H60.7242C61.1684 16.1146 61.6113 16.0659 62.0441 15.9664C62.4178 15.8825 62.7777 15.7462 63.1133 15.5616C63.3982 15.4016 63.6457 15.1826 63.8392 14.9193C64.0119 14.6943 64.1076 14.4197 64.112 14.1361C64.127 13.8729 64.0422 13.6136 63.8744 13.4102C63.6874 13.2152 63.4588 13.0648 63.2057 12.9702C62.8612 12.8428 62.499 12.7701 62.1321 12.7547C61.6922 12.7239 61.2522 12.7107 60.7374 12.7107H46.0073C44.9233 12.7089 43.8444 12.5609 42.8 12.2707C41.8398 12.0241 40.93 11.6116 40.1118 11.052C39.37 10.5417 38.746 9.87863 38.2815 9.10732C37.81 8.30885 37.5708 7.3946 37.5908 6.46752C37.5849 5.58007 37.8028 4.70546 38.2243 3.92451C38.6641 3.12516 39.2631 2.4244 39.9842 1.86546C40.762 1.25351 41.6404 0.781576 42.58 0.470768C43.5976 0.128058 44.6652 -0.0429316 45.739 -0.0351949H66.743V4.75165H46.5045C46.096 4.74852 45.6885 4.79281 45.2902 4.88364C44.941 4.96179 44.6048 5.08919 44.2915 5.26201C44.0122 5.41451 43.7749 5.63366 43.6007 5.89996C43.4322 6.16238 43.3436 6.46806 43.3455 6.7799C43.3556 7.03135 43.4429 7.27359 43.5956 7.47358C43.7484 7.67357 43.9591 7.82157 44.1991 7.89741C44.9679 8.19555 45.7908 8.32895 46.6145 8.28898H61.7274C62.8165 8.28017 63.902 8.41328 64.9567 8.68495C65.8904 8.91908 66.7752 9.3168 67.5701 9.85967C68.2944 10.3558 68.8962 11.0103 69.33 11.7735C69.7614 12.5665 69.9797 13.4579 69.9636 14.3605C69.9652 15.2419 69.7475 16.1098 69.33 16.8859C68.8929 17.6909 68.2937 18.3965 67.5701 18.9582C66.7981 19.569 65.9257 20.041 64.9919 20.3529C63.9706 20.6994 62.8983 20.8719 61.8198 20.8632H37.6216L37.6392 16.1116Z" fill="white"/><path d="M91.0996 9.12492L101.874 0.00879787H109.86L93.7482 13.9426H93.603V20.9116H87.6151V13.9338H87.4215L71.0547 0H79.0753L90.0613 9.12492H91.0996Z" fill="white"/><path d="M148.181 20.9028H140.886L135.699 14.8445H120.204V20.8852H114.216V3.11958e-06H140.49C141.568 -0.0100594 142.639 0.156397 143.663 0.492764C144.585 0.796856 145.455 1.24211 146.241 1.81267C146.945 2.31341 147.544 2.94896 148.001 3.68253C148.406 4.33238 148.625 5.0812 148.634 5.84717V8.89614C148.624 9.55525 148.457 10.2024 148.146 10.7836C147.803 11.4369 147.357 12.031 146.826 12.5435C146.268 13.0943 145.632 13.5598 144.938 13.925C144.251 14.292 143.508 14.5418 142.739 14.6641L148.181 20.9028ZM142.629 7.70383V7.00428C142.631 6.69535 142.551 6.3914 142.395 6.12435C142.223 5.83657 141.987 5.5926 141.705 5.4116C141.37 5.19314 141.001 5.03113 140.614 4.93204C140.147 4.81073 139.666 4.75155 139.184 4.75605H120.204V10.0357H139.184C139.71 10.0467 140.235 9.97846 140.741 9.83327C141.129 9.72214 141.493 9.54015 141.815 9.29651C142.074 9.09481 142.284 8.83775 142.431 8.54417C142.555 8.28716 142.622 8.00665 142.629 7.72143V7.70383Z" fill="white"/><path d="M192.349 20.9028H185.455L182.296 16.9827H162.519L159.4 20.9028H152.537L168.578 0H176.295L192.349 20.9028ZM172.027 4.78684L166.004 12.2047H178.886L172.775 4.78684H172.027Z" fill="white"/></g><defs><clipPath id="clip0_2403_478"><rect width="192.349" height="32.21" fill="white"/></clipPath></defs></svg>
+      <div class="header-actions">
+        <button class="btn" onclick="openTeamPanel()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1 13v-1a3 3 0 013-3h2a3 3 0 013 3v1"/><path d="M10 6h4M12 4v4"/></svg>
+          Équipe
+        </button>
+        <button class="btn" onclick="openAddChantier()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v10M2 7h10"/></svg>
+          Chantier
+        </button>
+        <button class="btn btn-primary" onclick="toggleTvMode()" id="tvBtn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="12" height="8" rx="1"/><path d="M4 14h6"/></svg>
+          Mode TV
+        </button>
+      </div>
+    </div>
+    <div class="header-nav">
+      <div class="nav-group">
+        <h1>Planning Chantier</h1>
+        <button class="btn btn-icon" onclick="navigate(-1)" title="← Semaine précédente">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2L4 7l5 5"/></svg>
+        </button>
+        <button class="btn btn-icon" onclick="navigate(1)" title="Semaine suivante →">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 2l5 5-5 5"/></svg>
+        </button>
+        <button class="btn" onclick="goToToday()" title="Aller à aujourd'hui">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M7 4v3h3"/></svg>
+          Aujourd'hui
+        </button>
+        <span id="dateRange" class="date-range"></span>
+      </div>
+      <div class="header-filters">
+        <button class="filter-chip active" data-team="all" onclick="setTeam('all')">Tous</button>
+        <button class="filter-chip" data-team="compagnon" onclick="setTeam('compagnon')">Compagnons</button>
+        <button class="filter-chip" data-team="sous-traitant" onclick="setTeam('sous-traitant')">Sous-traitants</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid-wrapper" id="gridWrapper"></div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+<!-- MODAL: Assigner chantier -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="assignTitle">Assigner un chantier</h2>
+      <button class="modal-close" onclick="closeModal('assignModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Chantier</label>
+        <select id="assignChantier">
+          <option value="">— Vide (retirer) —</option>
+        </select>
+      </div>
+      <div class="form-group" id="scopeGroup" style="display:none;">
+        <label>Attribuer à</label>
+        <div class="assign-modes">
+          <button class="assign-mode active" data-scope="personal" onclick="setAssignScope('personal')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4"/></svg>
+            <span id="scopePersonalLabel">Perso</span>
+          </button>
+          <button class="assign-mode" data-scope="crew" onclick="setAssignScope('crew')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="3"/><circle cx="9" cy="6" r="3"/></svg>
+            <span id="scopeCrewLabel">Binôme</span>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Appliquer sur</label>
+        <div class="assign-modes">
+          <button class="assign-mode active" data-mode="day" onclick="setAssignMode('day')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>
+            Ce jour
+          </button>
+          <button class="assign-mode" data-mode="week" onclick="setAssignMode('week')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="12" height="2" rx="1"/><rect x="1" y="8" width="8" height="2" rx="1"/></svg>
+            La semaine
+          </button>
+          <button class="assign-mode" data-mode="range" onclick="setAssignMode('range')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h10M2 4h4M8 10h4"/></svg>
+            Plage perso
+          </button>
+        </div>
+      </div>
+      <!-- DAY mode: single date -->
+      <div class="form-group assign-date-fields" id="dayFields">
+        <label>Jour</label>
+        <input type="date" id="assignDay">
+      </div>
+      <!-- WEEK mode: dropdown of weeks with date range -->
+      <div class="form-group assign-date-fields" id="weekFields" style="display:none;">
+        <label>Semaine</label>
+        <select id="assignWeekSelect"></select>
+      </div>
+      <!-- RANGE mode: start + end -->
+      <div class="form-group assign-date-fields" id="rangeFields" style="display:none;">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label>Du</label>
+            <input type="date" id="assignStart">
+          </div>
+          <div style="flex:1;">
+            <label>Au</label>
+            <input type="date" id="assignEnd">
+          </div>
+        </div>
+      </div>
+      <div class="assign-preview" id="assignPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('assignModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAssign()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: Gestion équipe -->
+<div class="modal-overlay" id="teamPanel">
+  <div class="modal" style="width:560px; max-height:90vh;">
+    <div class="modal-header">
+      <h2>Gestion de l'équipe</h2>
+      <button class="modal-close" onclick="closeModal('teamPanel')">×</button>
+    </div>
+    <div class="modal-body" style="padding:12px 24px 20px; overflow-y:auto;">
+      <div class="team-section-label">Binômes / Équipes</div>
+      <div id="crewList" class="team-list"></div>
+      <button class="btn btn-sm" style="margin-top:8px;" onclick="openCrewForm(-1)">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 1v10M1 6h10"/></svg>
+        Nouveau binôme
+      </button>
+
+      <div class="team-section-label" style="margin-top:20px;">Compagnons</div>
+      <div id="teamListCompagnons" class="team-list"></div>
+      <div class="team-section-label" style="margin-top:16px;">Sous-traitants</div>
+      <div id="teamListSoustraitants" class="team-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="openWorkerForm(-1)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v10M2 7h10"/></svg>
+        Ajouter un membre
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ajouter / Modifier un membre -->
+<div class="modal-overlay" id="workerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="workerModalTitle">Ajouter un membre</h2>
+      <button class="modal-close" onclick="closeModal('workerModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="workerName" placeholder="ex: Jean-Pierre">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>Type</label>
+          <select id="workerType">
+            <option value="compagnon">Compagnon</option>
+            <option value="sous-traitant">Sous-traitant</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Binôme</label>
+          <select id="workerCrew"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Spécialité (optionnel)</label>
+        <input type="text" id="workerRole" placeholder="ex: Plombier, Gaineur...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('workerModal')">Annuler</button>
+      <button class="btn btn-primary" id="workerSubmitBtn" onclick="confirmWorkerForm()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Crew form -->
+<div class="modal-overlay" id="crewModal">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <h2 id="crewModalTitle">Nouveau binôme</h2>
+      <button class="modal-close" onclick="closeModal('crewModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="crewName" placeholder="ex: Binôme A">
+      </div>
+      <div class="form-group">
+        <label>Couleur</label>
+        <div class="color-picker" id="crewColorPicker"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('crewModal')">Annuler</button>
+      <button class="btn btn-primary" id="crewSubmitBtn" onclick="confirmCrewForm()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add chantier -->
+<div class="modal-overlay" id="chantierModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Ajouter un chantier</h2>
+      <button class="modal-close" onclick="closeModal('chantierModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nom du chantier</label>
+        <input type="text" id="chantierName" placeholder="ex: TOUR EIFFEL">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('chantierModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAddChantier()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="context-menu" id="contextMenu">
+  <button class="context-item" onclick="ctxEdit()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2l1 1-8 8H2v-2z"/></svg>
+    Modifier
+  </button>
+  <button class="context-item" onclick="ctxCopyWeek()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M4 10H3a1 1 0 01-1-1V3a1 1 0 011-1h6a1 1 0 011 1v1"/></svg>
+    Copier la semaine
+  </button>
+  <button class="context-item danger" onclick="ctxClear()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h10M5 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4 4v8a1 1 0 001 1h4a1 1 0 001-1V4"/></svg>
+    Effacer
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── FIREBASE ───
+const firebaseConfig = {
+  apiKey: "AIzaSyDEzd3LRiIAKoePEOYrWt66kxmpX5Uef84",
+  authDomain: "syra-planning.firebaseapp.com",
+  databaseURL: "https://syra-planning-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "syra-planning",
+  storageBucket: "syra-planning.firebasestorage.app",
+  messagingSenderId: "465104459475",
+  appId: "1:465104459475:web:8826531b607fcdf307a626"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const planningRef = db.ref('planning');
+
+// ─── STATE ───
+const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const MONTHS_FR = ['Janv.','Fév.','Mars','Avr.','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'];
+
+const CHANTIER_COLORS = [
+  'chantier-0','chantier-1','chantier-2','chantier-3',
+  'chantier-4','chantier-5','chantier-6','chantier-7'
+];
+
+let state = getDefaultState();
+let firebaseReady = false;
+let teamFilter = 'all';
+let assignTarget = null;
+let tvMode = false;
+let ctxTarget = null;
+
+function ensureState() {
+  if (!state.crews) state.crews = [];
+  if (!state.workers) state.workers = [];
+  if (!state.chantiers) state.chantiers = [];
+  if (!state.assignments) state.assignments = {};
+  state.workers.forEach(w => { if (w.crewId === undefined) w.crewId = null; });
+}
+
+function saveState() {
+  planningRef.set(state).catch(e => console.error('Firebase write error:', e));
+}
+
+function loadState() {
+  return null; // Firebase handles loading via listener
+}
+
+function getDefaultState() {
+  const chantiers = ['MGALLERY','AXIMA FB','RICHER','BOLIVAR','MAIRIE DU 12','CLUB AUTO','BRIE','CFA'];
+  const crews = [
+    { id: 'crew-1', name: 'Binôme A', color: '#60A5FA' },
+    { id: 'crew-2', name: 'Binôme B', color: '#34D399' },
+  ];
+  const workers = [
+    { name:'DANIEL', type:'compagnon', role:'', crewId:'crew-1' },
+    { name:'EYMERIC', type:'compagnon', role:'', crewId:'crew-1' },
+    { name:'HUGO', type:'compagnon', role:'', crewId:'crew-2' },
+    { name:'ROBIN', type:'compagnon', role:'', crewId:'crew-2' },
+    { name:'GREGORI', type:'compagnon', role:'', crewId:null },
+    { name:'CHRISTOPHER', type:'compagnon', role:'', crewId:null },
+    { name:'VENTILGEST', type:'sous-traitant', role:'Gaineur', crewId:null },
+    { name:'EMINSTAL', type:'sous-traitant', role:'Chauffagiste', crewId:null },
+    { name:'ANTHONY', type:'sous-traitant', role:'', crewId:null },
+  ];
+
+  const assignments = {};
+
+  // Pre-fill from Excel data
+  const prefill = {
+    'DANIEL': {
+      '2026-02-23':'MGALLERY','2026-02-24':'MGALLERY','2026-02-25':'MGALLERY','2026-02-26':'MGALLERY','2026-02-27':'MGALLERY',
+      '2026-03-02':'AXIMA FB','2026-03-03':'AXIMA FB','2026-03-04':'AXIMA FB','2026-03-05':'AXIMA FB','2026-03-06':'AXIMA FB',
+      '2026-03-09':'RICHER','2026-03-10':'RICHER','2026-03-11':'RICHER','2026-03-12':'RICHER','2026-03-13':'RICHER',
+    },
+    'EYMERIC': {
+      '2026-02-23':'MGALLERY','2026-02-24':'MGALLERY','2026-02-25':'MGALLERY','2026-02-26':'MGALLERY','2026-02-27':'MGALLERY',
+      '2026-03-02':'AXIMA FB','2026-03-03':'AXIMA FB','2026-03-04':'AXIMA FB','2026-03-05':'AXIMA FB','2026-03-06':'AXIMA FB',
+      '2026-03-09':'RICHER','2026-03-10':'RICHER','2026-03-11':'RICHER','2026-03-12':'RICHER','2026-03-13':'RICHER',
+    },
+    'HUGO': {
+      '2026-02-23':'BOLIVAR','2026-02-24':'BOLIVAR','2026-02-25':'BOLIVAR','2026-02-26':'BOLIVAR','2026-02-27':'BOLIVAR',
+      '2026-03-02':'BOLIVAR','2026-03-03':'MAIRIE DU 12','2026-03-04':'MAIRIE DU 12','2026-03-05':'CLUB AUTO','2026-03-06':'CLUB AUTO',
+      '2026-03-09':'CLUB AUTO','2026-03-10':'CLUB AUTO',
+    },
+    'ROBIN': {
+      '2026-02-23':'BOLIVAR','2026-02-24':'BOLIVAR','2026-02-25':'BOLIVAR','2026-02-26':'BOLIVAR','2026-02-27':'BOLIVAR',
+      '2026-03-02':'BOLIVAR','2026-03-03':'MAIRIE DU 12','2026-03-04':'MAIRIE DU 12','2026-03-05':'CLUB AUTO','2026-03-06':'CLUB AUTO',
+      '2026-03-09':'CLUB AUTO','2026-03-10':'CLUB AUTO',
+      '2026-03-23':'CFA','2026-03-24':'CFA','2026-03-25':'CFA','2026-03-26':'CFA','2026-03-27':'CFA',
+    },
+    'GREGORI': {
+      '2026-02-23':'CLUB AUTO','2026-02-24':'CLUB AUTO','2026-02-25':'BRIE','2026-02-26':'CLUB AUTO','2026-02-27':'CLUB AUTO',
+      '2026-03-02':'CLUB AUTO','2026-03-03':'CLUB AUTO','2026-03-04':'CLUB AUTO','2026-03-05':'CLUB AUTO','2026-03-06':'CLUB AUTO',
+    },
+    'CHRISTOPHER': {
+      '2026-02-23':'CLUB AUTO','2026-02-24':'CLUB AUTO','2026-02-25':'CLUB AUTO','2026-02-26':'CLUB AUTO','2026-02-27':'CLUB AUTO',
+      '2026-03-02':'CLUB AUTO','2026-03-03':'CLUB AUTO','2026-03-04':'CLUB AUTO','2026-03-05':'CLUB AUTO','2026-03-06':'CLUB AUTO',
+    },
+    'EMINSTAL': {
+      '2026-02-26':'BRIE','2026-02-27':'BRIE',
+    },
+  };
+
+  for (const [wName, days] of Object.entries(prefill)) {
+    const wIdx = workers.findIndex(w => w.name === wName);
+    if (wIdx === -1) continue;
+    for (const [date, ch] of Object.entries(days)) {
+      const key = `${wIdx}_${date}`;
+      assignments[key] = ch;
+    }
+  }
+
+  return { chantiers, crews, workers, assignments };
+}
+
+// ─── DATE UTILS ───
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function addDays(d, n) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + n);
+  return dt;
+}
+
+function isWeekend(d) {
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
+function getWeekNumber(d) {
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt - yearStart) / 86400000) + 1)/7);
+}
+
+function todayKey() { return dateKey(new Date()); }
+
+// ─── CHANTIER COLOR MAP ───
+function getChantierColor(name) {
+  const idx = state.chantiers.indexOf(name);
+  if (idx === -1) return 'chantier-0';
+  return CHANTIER_COLORS[idx % CHANTIER_COLORS.length];
+}
+
+// ─── RENDER ───
+const OFF_COL = '20px';
+const WORK_COL = 'minmax(75px, 1fr)';
+
+function buildGridCols(days) {
+  const cols = days.map(d => isOffDay(d) ? OFF_COL : WORK_COL);
+  return `auto ${cols.join(' ')}`;
+}
+
+function render() {
+  const today = new Date();
+  // Rolling year: 26 weeks back + 26 weeks forward
+  const startMonday = addDays(getMonday(today), -26 * 7);
+  const totalDays = 52 * 7;
+
+  const days = [];
+  for (let i = 0; i < totalDays; i++) {
+    days.push(addDays(startMonday, i));
+  }
+
+  // Update date range display
+  document.getElementById('dateRange').textContent = `${startMonday.getFullYear()} — ${days[days.length-1].getFullYear()}`;
+
+  // Merged worker list — group by crew within type
+  const allWorkers = state.workers.map((w, idx) => ({...w, origIdx: idx}))
+    .filter(w => teamFilter === 'all' || w.type === teamFilter);
+  
+  function crewSort(a, b) {
+    const aCrewIdx = a.crewId ? state.crews.findIndex(c => c.id === a.crewId) : 999;
+    const bCrewIdx = b.crewId ? state.crews.findIndex(c => c.id === b.crewId) : 999;
+    if (aCrewIdx !== bCrewIdx) return aCrewIdx - bCrewIdx;
+    return 0; // preserve original order within same crew
+  }
+  
+  const sortedWorkers = [
+    ...allWorkers.filter(w => w.type === 'compagnon').sort(crewSort),
+    ...allWorkers.filter(w => w.type === 'sous-traitant').sort(crewSort),
+  ];
+
+  const wrapper = document.getElementById('gridWrapper');
+  wrapper.className = 'grid-wrapper';
+
+  const gridCols = buildGridCols(days);
+  const weeks = gatherWeeks(days);
+  const gridRows = `auto auto repeat(${sortedWorkers.length}, minmax(40px, 1fr))`;
+
+  let html = buildHeaders(days, weeks);
+  let row = 3;
+  sortedWorkers.forEach(w => {
+    html += renderWorkerRow(w, days, row);
+    row++;
+  });
+
+  wrapper.innerHTML = `<div class="planning-grid" style="grid-template-columns:${gridCols}; grid-template-rows:${gridRows};">${html}</div>`;
+  renderLegend(sortedWorkers);
+}
+
+function gatherWeeks(days) {
+  const weeks = [];
+  let currentWeek = null;
+  days.forEach((d, i) => {
+    const wn = getWeekNumber(d);
+    if (!currentWeek || currentWeek.num !== wn) {
+      // Use the Monday of this week for the month label
+      const monday = getMonday(d);
+      currentWeek = { num: wn, start: i, span: 1, month: MONTHS_FR[monday.getMonth()] };
+      weeks.push(currentWeek);
+    } else {
+      currentWeek.span++;
+    }
+  });
+  return weeks;
+}
+
+function buildHeaders(days, weeks) {
+  let html = '';
+  html += `<div class="grid-corner" style="grid-row:1;">ÉQUIPE</div>`;
+  weeks.forEach(w => {
+    html += `<div class="week-header" style="grid-column: span ${w.span}; grid-row:1;">S${w.num} <span class="week-month">${w.month}</span></div>`;
+  });
+
+  html += `<div class="grid-corner" style="grid-row:2; border-top:none;"></div>`;
+  const tk = todayKey();
+  days.forEach((d, i) => {
+    const dk = dateKey(d);
+    const we = isWeekend(d);
+    const hol = isHoliday(dk);
+    const off = we || hol;
+    let cls = 'day-header';
+    if (dk === tk) cls += ' today';
+    if (we) cls += ' weekend';
+    if (hol && !we) cls += ' holiday';
+    if (off) cls += ' off';
+    
+    // Off-day: just show initial letter. Work day: full display.
+    const dayLabel = off
+      ? `<div class="day-name">${DAYS_FR[d.getDay()].charAt(0)}</div>`
+      : `<div class="day-name">${DAYS_FR[d.getDay()]}</div><div class="day-num">${d.getDate()}</div>${hol ? `<div class="holiday-label">${getHolidayName(dk)}</div>` : ''}`;
+
+    html += `<div class="${cls}" style="grid-column:${i+2}; grid-row:2;">${dayLabel}</div>`;
+  });
+  return html;
+}
+
+function renderWorkerRow(worker, days, row) {
+  const isST = worker.type === 'sous-traitant';
+  const stCls = isST ? ' is-st' : '';
+  const stBadge = isST ? '<span class="st-badge">ST</span>' : '';
+  
+  // Crew info
+  const crew = worker.crewId ? state.crews.find(c => c.id === worker.crewId) : null;
+  const crewBar = crew 
+    ? `<div class="crew-bar" style="background:${crew.color};"></div>` 
+    : `<div class="crew-bar" style="background:transparent;"></div>`;
+  const crewTag = crew 
+    ? `<span class="crew-tag" style="background:${crew.color}20; color:${crew.color};">${crew.name}</span>` 
+    : '';
+
+  let html = `<div class="worker-name${stCls}" style="grid-row:${row}; cursor:pointer;" onclick="openWorkerForm(${worker.origIdx})">
+    ${crewBar}
+    <div class="worker-info">
+      <div class="name">${worker.name}</div>
+      ${worker.role ? `<div class="role">${worker.role}</div>` : ''}
+    </div>
+    ${crewTag}
+    ${stBadge}
+  </div>`;
+
+  const tk = todayKey();
+  days.forEach((d, i) => {
+    const dk = dateKey(d);
+    const we = isWeekend(d);
+    const hol = isHoliday(dk);
+    const off = we || hol;
+    const key = `${worker.origIdx}_${dk}`;
+    const chantier = state.assignments[key] || '';
+
+    let cls = 'cell' + stCls;
+    if (dk === tk) cls += ' today';
+    if (we) cls += ' weekend';
+    if (hol && !we) cls += ' holiday';
+
+    let content = '';
+    if (chantier && !off) {
+      const cc = getChantierColor(chantier);
+      content = `<div class="cell-content ${cc}">${chantier}</div>`;
+    }
+
+    html += `<div class="${cls}" style="grid-column:${i+2}; grid-row:${row};" 
+      data-worker="${worker.origIdx}" data-date="${dk}"
+      ${off ? '' : `onclick="cellClick(event, ${worker.origIdx}, '${dk}')" oncontextmenu="cellContext(event, ${worker.origIdx}, '${dk}')"`}>${content}</div>`;
+  });
+
+  return html;
+}
+
+function renderLegend(workers) {
+  const usedChantiers = new Set(Object.values(state.assignments));
+  const legendEl = document.getElementById('legend');
+  const colors = {
+    '0':'var(--blue)','1':'var(--green)','2':'var(--purple)','3':'var(--orange)',
+    '4':'var(--pink)','5':'var(--cyan)','6':'var(--red)','7':'var(--accent)'
+  };
+
+  let html = '<span class="filter-label" style="margin-right:8px;">Chantiers</span>';
+  state.chantiers.forEach(ch => {
+    if (!usedChantiers.has(ch)) return;
+    const cc = getChantierColor(ch);
+    const colorVar = cc.replace('chantier-','');
+    html += `<div class="legend-item"><div class="legend-dot" style="background:${colors[colorVar]};"></div>${ch}</div>`;
+  });
+
+  // Crews
+  if (state.crews.length > 0) {
+    html += `<div class="filter-sep"></div>`;
+    html += `<span class="filter-label" style="margin-right:4px;">Binômes</span>`;
+    state.crews.forEach(c => {
+      const members = state.workers.filter(w => w.crewId === c.id).map(w => w.name);
+      html += `<div class="legend-item"><div class="legend-dot" style="background:${c.color};"></div>${c.name}${members.length ? ' (' + members.join(' + ') + ')' : ''}</div>`;
+    });
+  }
+
+  // ST indicator
+  const hasST = (workers || state.workers).some(w => (w.type || '') === 'sous-traitant');
+  if (hasST) {
+    html += `<div class="filter-sep"></div>`;
+    html += `<div class="legend-item"><div class="legend-dot" style="background:var(--purple); opacity:0.5;"></div><span style="font-size:11px;">ST</span> = Sous-traitant</div>`;
+  }
+
+  legendEl.innerHTML = html;
+}
+
+// ─── INTERACTIONS ───
+let assignMode = 'day'; // 'day' | 'week' | 'range'
+let assignScope = 'personal'; // 'personal' | 'crew'
+
+function buildWeekOptions(selectedDate) {
+  const today = new Date();
+  const start = getMonday(addDays(today, -7 * 4));
+  const end = addDays(today, 7 * (displayWeeks + 4));
+  const sel = document.getElementById('assignWeekSelect');
+  sel.innerHTML = '';
+
+  const clickedMonday = dateKey(getMonday(new Date(selectedDate)));
+  let d = new Date(start);
+  while (d <= end) {
+    const mon = new Date(d);
+    const fri = addDays(mon, 4);
+    const wn = getWeekNumber(mon);
+    const monKey = dateKey(mon);
+
+    // Count actual working days (exclude holidays)
+    let workDays = 0;
+    let holNames = [];
+    for (let i = 0; i < 5; i++) {
+      const dayDate = addDays(mon, i);
+      const dk = dateKey(dayDate);
+      if (isHoliday(dk)) {
+        holNames.push(getHolidayName(dk));
+      } else {
+        workDays++;
+      }
+    }
+
+    let label = `S${wn}  ·  ${formatDateShort(monKey)} → ${formatDateShort(dateKey(fri))}`;
+    if (holNames.length > 0) {
+      label += `  (${workDays}j — ${holNames.join(', ')})`;
+    }
+
+    const selected = monKey === clickedMonday ? 'selected' : '';
+    sel.innerHTML += `<option value="${monKey}" ${selected}>${label}</option>`;
+    d = addDays(d, 7);
+  }
+}
+
+function cellClick(e, workerIdx, date) {
+  if (tvMode) return;
+  e.stopPropagation();
+  assignTarget = { workerIdx, dateKey: date };
+  assignMode = 'day';
+  assignScope = 'personal';
+  const w = state.workers[workerIdx];
+  const crew = w.crewId ? state.crews.find(c => c.id === w.crewId) : null;
+  
+  document.getElementById('assignTitle').textContent = `${w.name} — ${formatDateFR(date)}`;
+
+  // Scope toggle: show only if worker belongs to a crew
+  const scopeGroup = document.getElementById('scopeGroup');
+  if (crew) {
+    scopeGroup.style.display = 'block';
+    const crewMembers = state.workers.filter(ww => ww.crewId === crew.id);
+    document.getElementById('scopePersonalLabel').textContent = w.name;
+    document.getElementById('scopeCrewLabel').textContent = `${crew.name} (${crewMembers.map(m => m.name).join(' + ')})`;
+    document.querySelectorAll('[data-scope]').forEach(b => b.classList.toggle('active', b.dataset.scope === 'personal'));
+  } else {
+    scopeGroup.style.display = 'none';
+  }
+
+  // Populate chantier select
+  const sel = document.getElementById('assignChantier');
+  sel.innerHTML = '<option value="">— Vide (retirer) —</option>';
+  state.chantiers.forEach(ch => {
+    sel.innerHTML += `<option value="${ch}" ${state.assignments[`${workerIdx}_${date}`] === ch ? 'selected' : ''}>${ch}</option>`;
+  });
+
+  // Day field
+  document.getElementById('assignDay').value = date;
+
+  // Week select — build options, pre-select the week of the clicked date
+  buildWeekOptions(date);
+
+  // Range fields
+  const d = new Date(date);
+  document.getElementById('assignStart').value = date;
+  const dayOfWeek = d.getDay();
+  const friday = new Date(d);
+  friday.setDate(d.getDate() + (5 - (dayOfWeek === 0 ? 7 : dayOfWeek)));
+  document.getElementById('assignEnd').value = dateKey(friday);
+
+  // Reset mode buttons & show correct fields
+  document.querySelectorAll('.assign-mode[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === 'day'));
+  showModeFields('day');
+
+  // Bind change listeners
+  sel.onchange = updateAssignPreview;
+  document.getElementById('assignDay').onchange = updateAssignPreview;
+  document.getElementById('assignWeekSelect').onchange = updateAssignPreview;
+  document.getElementById('assignStart').onchange = updateAssignPreview;
+  document.getElementById('assignEnd').onchange = updateAssignPreview;
+
+  updateAssignPreview();
+  openModal('assignModal');
+}
+
+function setAssignMode(mode) {
+  assignMode = mode;
+  document.querySelectorAll('.assign-mode[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  showModeFields(mode);
+  updateAssignPreview();
+}
+
+function setAssignScope(scope) {
+  assignScope = scope;
+  document.querySelectorAll('[data-scope]').forEach(b => b.classList.toggle('active', b.dataset.scope === scope));
+  updateAssignPreview();
+}
+
+function showModeFields(mode) {
+  document.getElementById('dayFields').style.display = mode === 'day' ? 'block' : 'none';
+  document.getElementById('weekFields').style.display = mode === 'week' ? 'block' : 'none';
+  document.getElementById('rangeFields').style.display = mode === 'range' ? 'block' : 'none';
+}
+
+function getAssignDates() {
+  if (!assignTarget) return [];
+  const dates = [];
+  
+  if (assignMode === 'day') {
+    const val = document.getElementById('assignDay').value;
+    if (val) {
+      const d = new Date(val);
+      if (!isOffDay(d)) dates.push(val);
+    }
+  } else if (assignMode === 'week') {
+    const val = document.getElementById('assignWeekSelect').value;
+    if (val) {
+      const monday = new Date(val);
+      for (let i = 0; i < 5; i++) {
+        const day = addDays(monday, i);
+        if (!isOffDay(day)) dates.push(dateKey(day));
+      }
+    }
+  } else if (assignMode === 'range') {
+    const startVal = document.getElementById('assignStart').value;
+    const endVal = document.getElementById('assignEnd').value;
+    if (startVal && endVal) {
+      const start = new Date(startVal);
+      const end = new Date(endVal);
+      let d = new Date(start);
+      while (d <= end) {
+        if (!isOffDay(d)) dates.push(dateKey(d));
+        d = addDays(d, 1);
+      }
+    }
+  }
+  return dates;
+}
+
+function updateAssignPreview() {
+  const dates = getAssignDates();
+  const ch = document.getElementById('assignChantier').value;
+  const preview = document.getElementById('assignPreview');
+  
+  if (dates.length === 0) {
+    preview.innerHTML = 'Aucun jour ouvré sélectionné';
+    return;
+  }
+  
+  const action = ch ? `<strong>${ch}</strong>` : '<strong>Vider</strong>';
+  const first = formatDateShort(dates[0]);
+  const last = formatDateShort(dates[dates.length - 1]);
+  
+  // Crew info
+  let scopeInfo = '';
+  if (assignScope === 'crew' && assignTarget) {
+    const w = state.workers[assignTarget.workerIdx];
+    if (w.crewId) {
+      const crew = state.crews.find(c => c.id === w.crewId);
+      const count = state.workers.filter(ww => ww.crewId === w.crewId).length;
+      if (crew) scopeInfo = ` · <strong>${count}</strong> pers.`;
+    }
+  }
+
+  if (dates.length === 1) {
+    preview.innerHTML = `${action} → ${first}${scopeInfo}`;
+  } else {
+    preview.innerHTML = `${action} → ${first} au ${last} · <strong>${dates.length}</strong>j${scopeInfo}`;
+  }
+}
+
+function formatDateShort(dk) {
+  const d = new Date(dk);
+  return `${DAYS_FR[d.getDay()]} ${d.getDate()}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
+}
+
+function confirmAssign() {
+  if (!assignTarget) return;
+  const ch = document.getElementById('assignChantier').value;
+  const dates = getAssignDates();
+  if (dates.length === 0) return;
+
+  // Determine which worker indices to assign
+  const targetIndices = [];
+  if (assignScope === 'crew') {
+    const w = state.workers[assignTarget.workerIdx];
+    if (w.crewId) {
+      state.workers.forEach((ww, idx) => {
+        if (ww.crewId === w.crewId) targetIndices.push(idx);
+      });
+    } else {
+      targetIndices.push(assignTarget.workerIdx);
+    }
+  } else {
+    targetIndices.push(assignTarget.workerIdx);
+  }
+
+  let totalChanged = 0;
+  targetIndices.forEach(wIdx => {
+    dates.forEach(dk => {
+      const key = `${wIdx}_${dk}`;
+      if (ch) {
+        state.assignments[key] = ch;
+      } else {
+        delete state.assignments[key];
+      }
+      totalChanged++;
+    });
+  });
+
+  saveState();
+  closeModal('assignModal');
+  render();
+  
+  const people = targetIndices.length;
+  const dayCount = dates.length;
+  if (ch) {
+    showToast(`${ch} → ${people > 1 ? people + ' pers. × ' : ''}${dayCount}j`);
+  } else {
+    showToast(`${dayCount}j vidé${dayCount > 1 ? 's' : ''}${people > 1 ? ' × ' + people + ' pers.' : ''}`);
+  }
+}
+
+function cellContext(e, workerIdx, date) {
+  if (tvMode) return;
+  e.preventDefault();
+  e.stopPropagation();
+  ctxTarget = { workerIdx, dateKey: date };
+  const menu = document.getElementById('contextMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('active');
+}
+
+function ctxEdit() {
+  closeCtx();
+  if (ctxTarget) cellClick(new Event('click'), ctxTarget.workerIdx, ctxTarget.dateKey);
+}
+
+function ctxCopyWeek() {
+  closeCtx();
+  if (!ctxTarget) return;
+  const d = new Date(ctxTarget.dateKey);
+  const monday = getMonday(d);
+  const nextMonday = addDays(monday, 7);
+
+  let copied = 0;
+  for (let i = 0; i < 5; i++) {
+    const srcDay = addDays(monday, i);
+    const dstDay = addDays(nextMonday, i);
+    if (isOffDay(srcDay) || isOffDay(dstDay)) continue;
+    const srcKey = `${ctxTarget.workerIdx}_${dateKey(srcDay)}`;
+    const dstKey = `${ctxTarget.workerIdx}_${dateKey(dstDay)}`;
+    if (state.assignments[srcKey]) {
+      state.assignments[dstKey] = state.assignments[srcKey];
+      copied++;
+    }
+  }
+  saveState();
+  render();
+  showToast(`${copied} jour${copied > 1 ? 's' : ''} copié${copied > 1 ? 's' : ''} vers S+1`);
+}
+
+function ctxClear() {
+  closeCtx();
+  if (!ctxTarget) return;
+  const key = `${ctxTarget.workerIdx}_${ctxTarget.dateKey}`;
+  delete state.assignments[key];
+  saveState();
+  render();
+  showToast('Cellule effacée');
+}
+
+function closeCtx() {
+  document.getElementById('contextMenu').classList.remove('active');
+}
+
+// ─── MODALS ───
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+});
+
+// ─── TEAM MANAGEMENT ───
+let editingWorkerIdx = -1;
+let editingCrewIdx = -1;
+const CREW_COLORS = ['#60A5FA','#34D399','#FB923C','#F472B6','#A78BFA','#22D3EE','#F87171','#FBBF24','#4ADE80','#E879F9'];
+let selectedCrewColor = CREW_COLORS[0];
+
+function openTeamPanel() {
+  renderTeamList();
+  openModal('teamPanel');
+}
+
+function renderTeamList() {
+  // Crews
+  const crewListEl = document.getElementById('crewList');
+  if (state.crews.length === 0) {
+    crewListEl.innerHTML = '<div class="team-empty">Aucun binôme créé</div>';
+  } else {
+    crewListEl.innerHTML = state.crews.map((c, i) => {
+      const members = state.workers.filter(w => w.crewId === c.id).map(w => w.name);
+      const memberStr = members.length ? members.join(', ') : '<em style="color:var(--text-dim)">Aucun membre</em>';
+      return `<div class="team-row" id="crewRow${i}">
+        <div class="crew-bar" style="background:${c.color}; width:4px; align-self:stretch; border-radius:2px; margin:4px 0;"></div>
+        <div class="team-info">
+          <div class="team-name">${c.name}</div>
+          <div class="team-role">${memberStr}</div>
+        </div>
+        <div class="team-actions">
+          <button class="btn-icon" onclick="openCrewForm(${i})" title="Modifier">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 1.5l2 2-7 7H2.5v-2z"/></svg>
+          </button>
+          <button class="btn-icon danger" onclick="deleteCrew(${i})" title="Supprimer">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3.5h9M4.5 3.5V3a1 1 0 011-1h2a1 1 0 011 1v.5M3.5 3.5v7a1 1 0 001 1h4a1 1 0 001-1v-7"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Workers
+  const compagnons = state.workers.map((w, i) => ({...w, idx: i})).filter(w => w.type === 'compagnon');
+  const soustraitants = state.workers.map((w, i) => ({...w, idx: i})).filter(w => w.type === 'sous-traitant');
+
+  document.getElementById('teamListCompagnons').innerHTML = compagnons.length 
+    ? compagnons.map(w => buildTeamRow(w)).join('')
+    : '<div class="team-empty">Aucun compagnon</div>';
+
+  document.getElementById('teamListSoustraitants').innerHTML = soustraitants.length
+    ? soustraitants.map(w => buildTeamRow(w)).join('')
+    : '<div class="team-empty">Aucun sous-traitant</div>';
+}
+
+function buildTeamRow(w) {
+  const crew = w.crewId ? state.crews.find(c => c.id === w.crewId) : null;
+  const crewTag = crew 
+    ? `<span class="crew-tag" style="background:${crew.color}20; color:${crew.color};">${crew.name}</span>` 
+    : '';
+  const count = Object.keys(state.assignments).filter(k => k.startsWith(w.idx + '_') && state.assignments[k]).length;
+
+  return `<div class="team-row" id="teamRow${w.idx}">
+    ${crew ? `<div class="crew-bar" style="background:${crew.color}; width:4px; align-self:stretch; border-radius:2px; margin:4px 0;"></div>` : '<div style="width:4px;"></div>'}
+    <div class="team-info">
+      <div class="team-name">${w.name}</div>
+      ${w.role ? `<div class="team-role">${w.role}</div>` : ''}
+    </div>
+    ${crewTag}
+    <div class="team-stats">${count}j</div>
+    <div class="team-actions">
+      <button class="btn-icon" onclick="openWorkerForm(${w.idx})" title="Modifier">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 1.5l2 2-7 7H2.5v-2z"/></svg>
+      </button>
+      <button class="btn-icon danger" onclick="confirmDeleteWorker(${w.idx})" title="Supprimer">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3.5h9M4.5 3.5V3a1 1 0 011-1h2a1 1 0 011 1v.5M3.5 3.5v7a1 1 0 001 1h4a1 1 0 001-1v-7"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+// ─── CREW FORM ───
+function openCrewForm(idx) {
+  editingCrewIdx = idx;
+  const pickerEl = document.getElementById('crewColorPicker');
+  
+  if (idx >= 0) {
+    const c = state.crews[idx];
+    document.getElementById('crewModalTitle').textContent = `Modifier — ${c.name}`;
+    document.getElementById('crewSubmitBtn').textContent = 'Enregistrer';
+    document.getElementById('crewName').value = c.name;
+    selectedCrewColor = c.color;
+  } else {
+    document.getElementById('crewModalTitle').textContent = 'Nouveau binôme';
+    document.getElementById('crewSubmitBtn').textContent = 'Créer';
+    document.getElementById('crewName').value = '';
+    selectedCrewColor = CREW_COLORS[state.crews.length % CREW_COLORS.length];
+  }
+  
+  pickerEl.innerHTML = CREW_COLORS.map(c => 
+    `<div class="color-swatch ${c === selectedCrewColor ? 'active' : ''}" style="background:${c};" onclick="pickCrewColor('${c}')"></div>`
+  ).join('');
+  
+  openModal('crewModal');
+  setTimeout(() => document.getElementById('crewName').focus(), 100);
+}
+
+function pickCrewColor(c) {
+  selectedCrewColor = c;
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('active', s.style.background === c);
+  });
+}
+
+function confirmCrewForm() {
+  const name = document.getElementById('crewName').value.trim();
+  if (!name) {
+    document.getElementById('crewName').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('crewName').style.borderColor = '', 1500);
+    return;
+  }
+  
+  if (editingCrewIdx >= 0) {
+    state.crews[editingCrewIdx].name = name;
+    state.crews[editingCrewIdx].color = selectedCrewColor;
+  } else {
+    state.crews.push({ id: 'crew-' + Date.now(), name, color: selectedCrewColor });
+  }
+  
+  saveState();
+  closeModal('crewModal');
+  renderTeamList();
+  render();
+  showToast(editingCrewIdx >= 0 ? `${name} modifié` : `${name} créé`);
+}
+
+function deleteCrew(idx) {
+  const crew = state.crews[idx];
+  // Unassign all workers from this crew
+  state.workers.forEach(w => { if (w.crewId === crew.id) w.crewId = null; });
+  state.crews.splice(idx, 1);
+  saveState();
+  renderTeamList();
+  render();
+  showToast(`${crew.name} supprimé`);
+}
+
+// ─── WORKER FORM ───
+function populateCrewSelect(selectedCrewId) {
+  const sel = document.getElementById('workerCrew');
+  sel.innerHTML = '<option value="">— Aucun —</option>';
+  state.crews.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}" ${c.id === selectedCrewId ? 'selected' : ''}>${c.name}</option>`;
+  });
+}
+
+function openWorkerForm(idx) {
+  editingWorkerIdx = idx;
+  
+  if (idx >= 0) {
+    const w = state.workers[idx];
+    document.getElementById('workerModalTitle').textContent = `Modifier — ${w.name}`;
+    document.getElementById('workerSubmitBtn').textContent = 'Enregistrer';
+    document.getElementById('workerName').value = w.name;
+    document.getElementById('workerType').value = w.type;
+    document.getElementById('workerRole').value = w.role || '';
+    populateCrewSelect(w.crewId);
+  } else {
+    document.getElementById('workerModalTitle').textContent = 'Ajouter un membre';
+    document.getElementById('workerSubmitBtn').textContent = 'Ajouter';
+    document.getElementById('workerName').value = '';
+    document.getElementById('workerType').value = 'compagnon';
+    document.getElementById('workerRole').value = '';
+    populateCrewSelect(null);
+  }
+  
+  openModal('workerModal');
+  setTimeout(() => document.getElementById('workerName').focus(), 100);
+}
+
+function confirmWorkerForm() {
+  const input = document.getElementById('workerName');
+  const name = input.value.trim().toUpperCase();
+  const type = document.getElementById('workerType').value;
+  const role = document.getElementById('workerRole').value.trim();
+  const crewId = document.getElementById('workerCrew').value || null;
+  
+  if (!name) { 
+    input.style.borderColor = 'var(--red)'; 
+    input.focus();
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return; 
+  }
+
+  if (editingWorkerIdx >= 0) {
+    state.workers[editingWorkerIdx] = { name, type, role, crewId };
+    saveState();
+    closeModal('workerModal');
+    renderTeamList();
+    render();
+    showToast(`${name} mis à jour`);
+  } else {
+    state.workers.push({ name, type, role, crewId });
+    saveState();
+    closeModal('workerModal');
+    renderTeamList();
+    render();
+    showToast(`${name} ajouté à l'équipe`);
+  }
+}
+
+let pendingDeleteIdx = -1;
+
+function confirmDeleteWorker(idx) {
+  const w = state.workers[idx];
+  const row = document.getElementById(`teamRow${idx}`);
+  if (!row) return;
+
+  // Check if there's already a confirm bar
+  if (row.querySelector('.confirm-delete')) return;
+
+  const count = Object.keys(state.assignments).filter(k => k.startsWith(idx + '_')).length;
+  const warning = count > 0 ? `${count} affectation${count > 1 ? 's' : ''} seront supprimée${count > 1 ? 's' : ''}` : 'Aucune affectation';
+
+  const bar = document.createElement('div');
+  bar.className = 'confirm-delete';
+  bar.innerHTML = `
+    <span>Supprimer <strong>${w.name}</strong> ? ${warning}.</span>
+    <button class="btn btn-sm" onclick="this.closest('.confirm-delete').remove()">Non</button>
+    <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red);" onclick="executeDeleteWorker(${idx})">Oui</button>
+  `;
+  row.after(bar);
+}
+
+function executeDeleteWorker(idx) {
+  const w = state.workers[idx];
+  
+  // Remove all assignments for this worker
+  Object.keys(state.assignments).forEach(k => {
+    if (k.startsWith(idx + '_')) delete state.assignments[k];
+  });
+
+  // Reindex assignments for workers after the deleted one
+  const newAssignments = {};
+  Object.entries(state.assignments).forEach(([k, v]) => {
+    const [wIdx, date] = k.split('_');
+    const wi = parseInt(wIdx);
+    if (wi < idx) {
+      newAssignments[k] = v;
+    } else if (wi > idx) {
+      newAssignments[`${wi - 1}_${date}`] = v;
+    }
+  });
+  state.assignments = newAssignments;
+
+  // Remove worker
+  state.workers.splice(idx, 1);
+  
+  saveState();
+  renderTeamList();
+  render();
+  showToast(`${w.name} supprimé`);
+}
+
+function openAddChantier() { 
+  document.getElementById('chantierName').value = ''; 
+  openModal('chantierModal'); 
+  setTimeout(() => document.getElementById('chantierName').focus(), 100);
+}
+
+function confirmAddChantier() {
+  const input = document.getElementById('chantierName');
+  const name = input.value.trim().toUpperCase();
+  if (!name) { 
+    input.style.borderColor = 'var(--red)'; 
+    input.focus();
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return; 
+  }
+  if (state.chantiers.includes(name)) {
+    showToast(`${name} existe déjà`);
+    closeModal('chantierModal');
+    return;
+  }
+  state.chantiers.push(name);
+  saveState();
+  closeModal('chantierModal');
+  render();
+  showToast(`Chantier « ${name} » ajouté — assignez-le depuis la grille`);
+}
+
+// ─── FILTERS ───
+function setTeam(t) {
+  teamFilter = t;
+  document.querySelectorAll('[data-team]').forEach(c => c.classList.toggle('active', c.dataset.team === t));
+  render();
+}
+
+// ─── TV MODE ───
+function toggleTvMode() {
+  tvMode = !tvMode;
+  document.getElementById('app').classList.toggle('tv-mode', tvMode);
+  const btn = document.getElementById('tvBtn');
+  btn.innerHTML = tvMode 
+    ? `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l10 10M12 2L2 12"/></svg> Quitter TV`
+    : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="12" height="8" rx="1"/><path d="M4 14h6"/></svg> Mode TV`;
+  if (tvMode) {
+    document.documentElement.requestFullscreen?.();
+  } else {
+    document.exitFullscreen?.();
+  }
+}
+
+function goToToday() {
+  const wrapper = document.getElementById('gridWrapper');
+  const todayCell = wrapper.querySelector('.day-header.today');
+  if (todayCell) {
+    // Get the name column width to offset correctly
+    const nameCol = wrapper.querySelector('.grid-corner');
+    const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
+    const todayLeft = todayCell.offsetLeft - nameWidth;
+    wrapper.scrollTo({ left: todayLeft, behavior: 'smooth' });
+  } else {
+    wrapper.scrollTo({ left: 0, behavior: 'smooth' });
+  }
+}
+
+function navigate(dir) {
+  const wrapper = document.getElementById('gridWrapper');
+  const headers = wrapper.querySelectorAll('.day-header');
+  if (headers.length < 7) return;
+  
+  // Width of exactly 7 day columns = one week
+  const firstHeader = headers[0].getBoundingClientRect();
+  const seventhHeader = headers[6].getBoundingClientRect();
+  const oneWeekWidth = seventhHeader.right - firstHeader.left;
+  
+  wrapper.scrollBy({ left: dir * oneWeekWidth, behavior: 'smooth' });
+}
+
+// ─── UTILS ───
+function formatDateFR(dk) {
+  const d = new Date(dk);
+  return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 2200);
+}
+
+// ─── GLOBAL LISTENERS ───
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.context-menu')) closeCtx();
+});
+
+document.addEventListener('keydown', (e) => {
+  // Don't navigate if a modal is open or an input is focused
+  const modalOpen = document.querySelector('.modal-overlay.active');
+  const inputFocused = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT';
+
+  if (e.key === 'Escape') {
+    closeCtx();
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    if (tvMode) toggleTvMode();
+  }
+  if (e.key === 'Enter') {
+    if (document.getElementById('chantierModal').classList.contains('active')) confirmAddChantier();
+    else if (document.getElementById('workerModal').classList.contains('active')) confirmWorkerForm();
+    else if (document.getElementById('assignModal').classList.contains('active')) confirmAssign();
+  }
+  // Arrow key navigation (works with TV remote)
+  if (!modalOpen && !inputFocused) {
+    if (e.key === 'ArrowRight') { navigate(1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { navigate(-1); e.preventDefault(); }
+  }
+});
+
+// Firebase handles live sync — no need for polling
+
+// ─── PUBLIC HOLIDAYS ───
+let publicHolidays = {}; // { '2026-05-01': 'Fête du Travail', ... }
+
+async function fetchHolidays() {
+  const today = new Date();
+  const years = [today.getFullYear(), today.getFullYear() + 1];
+  for (const year of years) {
+    try {
+      const res = await fetch(`https://calendrier.api.gouv.fr/jours-feries/metropole/${year}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        Object.assign(publicHolidays, data);
+      }
+    } catch(e) {
+      console.warn(`Impossible de charger les jours fériés ${year}`, e);
+    }
+  }
+}
+
+function isHoliday(dk) {
+  return !!publicHolidays[dk];
+}
+
+function getHolidayName(dk) {
+  return publicHolidays[dk] || '';
+}
+
+function isOffDay(d) {
+  return isWeekend(d) || isHoliday(dateKey(d));
+}
+
+// ─── INIT ───
+(async () => {
+  await fetchHolidays();
+
+  // Auto TV mode from URL param
+  if (new URLSearchParams(window.location.search).get('tv') === 'true') {
+    toggleTvMode();
+  }
+
+  // Firebase realtime listener — syncs state from all clients
+  planningRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      state = data;
+      ensureState();
+    } else if (!firebaseReady) {
+      // First load, no data in Firebase yet — push default state
+      state = getDefaultState();
+      ensureState();
+      saveState();
+    }
+    firebaseReady = true;
+    render();
+    // On first load, scroll to today instantly
+    if (!window._scrolledToToday) {
+      window._scrolledToToday = true;
+      setTimeout(() => {
+        const wrapper = document.getElementById('gridWrapper');
+        const todayCell = wrapper.querySelector('.day-header.today');
+        if (todayCell) {
+          const nameCol = wrapper.querySelector('.grid-corner');
+          const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
+          wrapper.scrollLeft = todayCell.offsetLeft - nameWidth;
+        }
+      }, 50);
+    }
+  }, (error) => {
+    console.error('Firebase read error:', error);
+    // Fallback: render with default state
+    if (!firebaseReady) {
+      state = getDefaultState();
+      ensureState();
+      firebaseReady = true;
+      render();
+    }
+  });
+})();
+</script>
+</body>
+</html>
