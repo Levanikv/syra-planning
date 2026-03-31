@@ -1994,17 +1994,7 @@ function toggleTvMode() {
 }
 
 function goToToday() {
-  const wrapper = document.getElementById('gridWrapper');
-  const todayCell = wrapper.querySelector('.day-header.today');
-  if (todayCell) {
-    // Get the name column width to offset correctly
-    const nameCol = wrapper.querySelector('.grid-corner');
-    const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
-    const todayLeft = todayCell.offsetLeft - nameWidth;
-    wrapper.scrollTo({ left: todayLeft, behavior: 'smooth' });
-  } else {
-    wrapper.scrollTo({ left: 0, behavior: 'smooth' });
-  }
+  scrollToCurrentDay(true);
 }
 
 function navigate(dir) {
@@ -2093,6 +2083,48 @@ function isOffDay(d) {
   return isWeekend(d) || isHoliday(dateKey(d));
 }
 
+// ─── AUTO-SCROLL ON DAY CHANGE ───
+let lastKnownDay = todayKey();
+
+function scrollToCurrentDay(smooth) {
+  const wrapper = document.getElementById('gridWrapper');
+  if (!wrapper) return;
+  
+  // Find the first working day from today
+  const today = new Date();
+  let d = new Date(today);
+  for (let i = 0; i < 7; i++) {
+    d = addDays(today, i);
+    if (!isOffDay(d)) break;
+  }
+  const dk = dateKey(d);
+  
+  // Find that day's header column
+  const target = wrapper.querySelector(`.day-header.today`) 
+    || wrapper.querySelector(`.cell[data-date="${dk}"]`);
+  
+  if (target) {
+    const nameCol = wrapper.querySelector('.grid-corner');
+    const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
+    const left = target.offsetLeft - nameWidth;
+    if (smooth) {
+      wrapper.scrollTo({ left, behavior: 'smooth' });
+    } else {
+      wrapper.scrollLeft = left;
+    }
+  }
+}
+
+// Check every 60 seconds if the day changed
+setInterval(() => {
+  const now = todayKey();
+  if (now !== lastKnownDay) {
+    lastKnownDay = now;
+    render();
+    setTimeout(() => scrollToCurrentDay(true), 100);
+  }
+}, 60000);
+
 // ─── INIT ───
 (async () => {
   await fetchHolidays();
@@ -2119,15 +2151,7 @@ function isOffDay(d) {
     // On first load, scroll to today instantly
     if (!window._scrolledToToday) {
       window._scrolledToToday = true;
-      setTimeout(() => {
-        const wrapper = document.getElementById('gridWrapper');
-        const todayCell = wrapper.querySelector('.day-header.today');
-        if (todayCell) {
-          const nameCol = wrapper.querySelector('.grid-corner');
-          const nameWidth = nameCol ? nameCol.getBoundingClientRect().width : 0;
-          wrapper.scrollLeft = todayCell.offsetLeft - nameWidth;
-        }
-      }, 50);
+      setTimeout(() => scrollToCurrentDay(false), 50);
     }
   }, (error) => {
     console.error('Firebase read error:', error);
