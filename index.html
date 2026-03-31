@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -1129,6 +1130,26 @@ header {
 </div>
 
 <!-- CONTEXT MENU -->
+
+<!-- MODAL: PIN -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal" style="width:320px;">
+    <div class="modal-header">
+      <h2 id="pinTitle">Code d'accès</h2>
+      <button class="modal-close" onclick="closeModal('pinModal')">×</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;" id="pinDesc">Entrez le code PIN pour modifier le planning</p>
+      <input type="password" id="pinInput" maxlength="6" placeholder="••••" 
+        style="text-align:center; font-size:24px; letter-spacing:8px; font-family:var(--mono); width:160px; margin:0 auto;">
+      <p id="pinError" style="font-size:12px; color:var(--red); margin-top:8px; min-height:18px;"></p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-primary" id="pinSubmitBtn" onclick="submitPin()" style="min-width:140px;">Déverrouiller</button>
+    </div>
+  </div>
+</div>
+
 <div class="context-menu" id="contextMenu">
   <button class="context-item" onclick="ctxEdit()">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2l1 1-8 8H2v-2z"/></svg>
@@ -1160,7 +1181,61 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 const planningRef = db.ref('planning');
+const pinRef = db.ref('config/pin');
+
+// ─── AUTH & PIN ───
+let isAuthenticated = false;
+let isUnlocked = false;
+let pendingAction = null; // function to call after PIN unlock
+
+// Sign in anonymously
+auth.signInAnonymously().catch(e => console.warn('Auth error:', e));
+auth.onAuthStateChanged(user => {
+  isAuthenticated = !!user;
+});
+
+function requireUnlock(action) {
+  if (tvMode) return; // TV mode = read only
+  if (isUnlocked) { action(); return; }
+  pendingAction = action;
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinTitle').textContent = 'Code d\'accès';
+  document.getElementById('pinDesc').textContent = 'Entrez le code PIN pour modifier le planning';
+  document.getElementById('pinSubmitBtn').textContent = 'Déverrouiller';
+  document.getElementById('pinSubmitBtn').onclick = submitPin;
+  openModal('pinModal');
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+}
+
+function submitPin() {
+  const input = document.getElementById('pinInput').value.trim();
+  if (!input) return;
+  
+  pinRef.once('value').then(snap => {
+    const storedPin = snap.val();
+    if (!storedPin) {
+      // No PIN set yet — this input becomes the PIN
+      pinRef.set(input).then(() => {
+        isUnlocked = true;
+        closeModal('pinModal');
+        showToast('Code PIN défini !');
+        if (pendingAction) { pendingAction(); pendingAction = null; }
+      });
+    } else if (input === storedPin) {
+      isUnlocked = true;
+      closeModal('pinModal');
+      showToast('Planning déverrouillé');
+      if (pendingAction) { pendingAction(); pendingAction = null; }
+    } else {
+      document.getElementById('pinError').textContent = 'Code incorrect';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinInput').focus();
+    }
+  });
+}
 
 // ─── STATE ───
 const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
@@ -1545,6 +1620,10 @@ function buildWeekOptions(selectedDate) {
 function cellClick(e, workerIdx, date) {
   if (tvMode) return;
   e.stopPropagation();
+  requireUnlock(() => openCellAssign(workerIdx, date));
+}
+
+function openCellAssign(workerIdx, date) {
   assignTarget = { workerIdx, dateKey: date };
   assignMode = 'day';
   assignScope = 'personal';
@@ -1758,35 +1837,39 @@ function ctxEdit() {
 function ctxCopyWeek() {
   closeCtx();
   if (!ctxTarget) return;
-  const d = new Date(ctxTarget.dateKey);
-  const monday = getMonday(d);
-  const nextMonday = addDays(monday, 7);
+  requireUnlock(() => {
+    const d = new Date(ctxTarget.dateKey);
+    const monday = getMonday(d);
+    const nextMonday = addDays(monday, 7);
 
-  let copied = 0;
-  for (let i = 0; i < 5; i++) {
-    const srcDay = addDays(monday, i);
-    const dstDay = addDays(nextMonday, i);
-    if (isOffDay(srcDay) || isOffDay(dstDay)) continue;
-    const srcKey = `${ctxTarget.workerIdx}_${dateKey(srcDay)}`;
-    const dstKey = `${ctxTarget.workerIdx}_${dateKey(dstDay)}`;
-    if (state.assignments[srcKey]) {
-      state.assignments[dstKey] = state.assignments[srcKey];
-      copied++;
+    let copied = 0;
+    for (let i = 0; i < 5; i++) {
+      const srcDay = addDays(monday, i);
+      const dstDay = addDays(nextMonday, i);
+      if (isOffDay(srcDay) || isOffDay(dstDay)) continue;
+      const srcKey = `${ctxTarget.workerIdx}_${dateKey(srcDay)}`;
+      const dstKey = `${ctxTarget.workerIdx}_${dateKey(dstDay)}`;
+      if (state.assignments[srcKey]) {
+        state.assignments[dstKey] = state.assignments[srcKey];
+        copied++;
+      }
     }
-  }
-  saveState();
-  render();
-  showToast(`${copied} jour${copied > 1 ? 's' : ''} copié${copied > 1 ? 's' : ''} vers S+1`);
+    saveState();
+    render();
+    showToast(`${copied} jour${copied > 1 ? 's' : ''} copié${copied > 1 ? 's' : ''} vers S+1`);
+  });
 }
 
 function ctxClear() {
   closeCtx();
   if (!ctxTarget) return;
-  const key = `${ctxTarget.workerIdx}_${ctxTarget.dateKey}`;
-  delete state.assignments[key];
-  saveState();
-  render();
-  showToast('Cellule effacée');
+  requireUnlock(() => {
+    const key = `${ctxTarget.workerIdx}_${ctxTarget.dateKey}`;
+    delete state.assignments[key];
+    saveState();
+    render();
+    showToast('Cellule effacée');
+  });
 }
 
 function closeCtx() {
@@ -1811,8 +1894,10 @@ const CREW_COLORS = ['#60A5FA','#34D399','#FB923C','#F472B6','#A78BFA','#22D3EE'
 let selectedCrewColor = CREW_COLORS[0];
 
 function openTeamPanel() {
-  renderTeamList();
-  openModal('teamPanel');
+  requireUnlock(() => {
+    renderTeamList();
+    openModal('teamPanel');
+  });
 }
 
 function renderTeamList() {
@@ -2100,10 +2185,12 @@ function executeDeleteWorker(idx) {
   showToast(`${w.name} supprimé`);
 }
 
-function openAddChantier() { 
-  document.getElementById('chantierName').value = ''; 
-  openModal('chantierModal'); 
-  setTimeout(() => document.getElementById('chantierName').focus(), 100);
+function openAddChantier() {
+  requireUnlock(() => {
+    document.getElementById('chantierName').value = ''; 
+    openModal('chantierModal'); 
+    setTimeout(() => document.getElementById('chantierName').focus(), 100);
+  });
 }
 
 function confirmAddChantier() {
@@ -2214,7 +2301,8 @@ document.addEventListener('keydown', (e) => {
     if (tvMode) toggleTvMode();
   }
   if (e.key === 'Enter') {
-    if (document.getElementById('chantierModal').classList.contains('active')) confirmAddChantier();
+    if (document.getElementById('pinModal').classList.contains('active')) submitPin();
+    else if (document.getElementById('chantierModal').classList.contains('active')) confirmAddChantier();
     else if (document.getElementById('workerModal').classList.contains('active')) confirmWorkerForm();
     else if (document.getElementById('assignModal').classList.contains('active')) confirmAssign();
   }
