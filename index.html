@@ -361,6 +361,13 @@ header {
   .toast.visible { transform: translateX(0) translateY(0); opacity: 1; }
 }
 
+/* Force desktop override (TVs, large screens detected via JS) */
+html.force-desktop #desktop-app { display: flex !important; }
+html.force-desktop #mobile-app { display: none !important; }
+html.force-desktop .m-tab-bar { display: none !important; }
+html.force-desktop .toast { bottom: 24px; left: 50%; right: auto; transform: translateX(-50%) translateY(80px); }
+html.force-desktop .toast.visible { transform: translateX(-50%) translateY(0); }
+
 /* ─── Mobile Components ─── */
 .m-topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 40; }
 .m-topbar-left { display: flex; align-items: center; gap: 10px; }
@@ -670,7 +677,29 @@ let mCurrentMonday = getMonday(new Date()), mSelectedDay = todayKey(), mCurrentT
 let mAssignTarget = null, mAssignMode = 'day', mAssignScope = 'personal';
 let mEditWorkerIdx = -1, mEditCrewIdx = -1, mSelectedCrewColor = CREW_COLORS[0];
 
-function isMobileView() { return window.innerWidth <= 1024; }
+// ─── DEVICE DETECTION ───
+// Detects TVs and large screens to force desktop layout, even when innerWidth is small
+function isTVorLargeScreen() {
+  const ua = navigator.userAgent.toLowerCase();
+  // 1. URL override — ?desktop=true or ?tv=true forces desktop
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('desktop') === 'true' || params.get('tv') === 'true') return true;
+  // 2. User agent sniff — covers Silk TV, Smart TVs, consoles, Tizen, WebOS, etc.
+  const tvPatterns = /smart-?tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast|nettv|crkey|silk.*tv|silktv|bravia|web0s|webos|tizen|viera|aquos|inettvbrowser|tv safari|large screen|kylo|opera tv|nintendo|playstation|xbox|dlna|philipstv/i;
+  if (tvPatterns.test(ua)) return true;
+  // Silk browser specifically (Amazon/Xiaomi TVs use it)
+  if (ua.includes('silk')) return true;
+  // 3. Physical screen size — many TVs report innerWidth small but screen.width is real
+  if (screen && screen.width >= 1280) return true;
+  // 4. No touch + no fine pointer = likely TV/remote
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const hasFinePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+  if (!hasTouch && !hasFinePointer && window.innerWidth >= 800) return true;
+  return false;
+}
+const FORCE_DESKTOP = isTVorLargeScreen();
+if (FORCE_DESKTOP) document.documentElement.classList.add('force-desktop');
+function isMobileView() { return !FORCE_DESKTOP && window.innerWidth <= 1024; }
 
 // ─── STATE MANAGEMENT ───
 function ensureState() {
